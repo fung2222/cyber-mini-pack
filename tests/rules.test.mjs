@@ -1,3 +1,4 @@
+import * as R from '../js/rules.js';
 import { rpsResult, rpsAI, RPS, xoWinner, bestMove, xoAI, reactAverage, reactTier, counter, beats } from '../js/rules.js';
 import assert from 'node:assert/strict';
 let n = 0; const t = (name, fn) => { fn(); n++; console.log('ok -', name); };
@@ -11,4 +12,7 @@ t('minimax blocks and wins', () => { assert.equal(bestMove(['X', 'X', null, 'O',
 t('core never loses vs random', () => { for (let g = 0; g < 40; g++) { const b = Array(9).fill(null); let turn = g % 2 ? 'X' : 'O'; let r; while (!(r = xoWinner(b))) { const i = turn === 'O' ? xoAI('core', b, 'O', rng) : b.map((v, k) => v ? -1 : k).filter(k => k >= 0)[Math.floor(rng() * b.filter(v => !v).length)]; b[i] = turn; turn = turn === 'X' ? 'O' : 'X'; } assert.notEqual(r.w, 'X'); } });
 t('rookie is beatable', () => { let pw = 0; for (let g = 0; g < 40; g++) { const b = Array(9).fill(null); let turn = 'X'; let r; while (!(r = xoWinner(b))) { const i = turn === 'O' ? xoAI('rookie', b, 'O', rng) : bestMove(b, 'X', rng); b[i] = turn; turn = turn === 'X' ? 'O' : 'X'; } if (r.w === 'X') pw++; } assert.ok(pw > 15, 'player wins ' + pw); });
 t('reaction helpers', () => { assert.equal(reactAverage([200, -1, 300]), 250); assert.equal(reactAverage([-1]), 0); assert.equal(reactTier(170)[1], '神經超頻'); assert.equal(reactTier(5000)[2], 'NEEDS COFFEE'); });
+t('endless RPS opponents keep coming, capped best-of-7', () => { const { rpsOpponent } = R; const a = rpsOpponent(2), b = rpsOpponent(3), c = rpsOpponent(500); assert.equal(a.id, 'oracle'); assert.ok(b.endless && b.zh && b.en); assert.ok(c.need <= 4 && c.need >= 2); assert.ok(['hunter', 'oracle'].includes(c.id)); });
+t('endless XO stages: blunder decreases but stays >= 4%, draw clears', () => { const { xoOpponent, xoAI } = R; const o1 = xoOpponent(3), o9 = xoOpponent(60); assert.ok(o1.blunder > o9.blunder && o9.blunder >= 0.04 && o9.drawClears); const b = Array(9).fill(null); const i = xoAI('endless', b, 'O', Math.random, 0); assert.ok(i >= 0 && i < 9); });
+t('reaction gauntlet target tightens and saturates at 300 ms', () => { const { reactTarget } = R; assert.equal(reactTarget(0), 450); assert.ok(reactTarget(5) < 400 && reactTarget(1000) >= 300); });
 console.log(`ALL PASSED (${n})`);

@@ -11,9 +11,9 @@ export const RPS_WINS_NEEDED = 2;                                          // be
 
 /** opponent ladder: each has a personality */
 export const RPS_OPPONENTS = [
-  { id: 'rando', zh: '亂嚟仔', en: 'RANDO', desc: '完全隨機 · pure chaos' },
-  { id: 'hunter', zh: '模式獵人', en: 'PATTERN HUNTER', desc: '睇穿你嘅慣性 · learns your habits' },
-  { id: 'oracle', zh: '讀心神算', en: 'MIND ORACLE', desc: '預測你下一步 · predicts your next move' },
+  { id: 'rando', zh: '亂嚟仔', en: 'RANDO', desc: '完全隨機', descEn: 'Pure chaos' },
+  { id: 'hunter', zh: '模式獵人', en: 'PATTERN HUNTER', desc: '睇穿你嘅慣性', descEn: 'Learns your habits' },
+  { id: 'oracle', zh: '讀心神算', en: 'MIND ORACLE', desc: '預測你下一步', descEn: 'Predicts your next move' },
 ];
 export function rpsAI(id, history, rng = Math.random) {
   // history: [{p, a, r}] player move, ai move, result(from player view)
@@ -64,12 +64,13 @@ export function bestMove(b, me, rng = Math.random) {
 }
 function findWin(b, who) { for (let i = 0; i < 9; i++) if (!b[i]) { b[i] = who; const w = xoWinner(b); b[i] = null; if (w && w.w === who) return i; } return -1; }
 export const XO_OPPONENTS = [
-  { id: 'rookie', zh: '新手機械人', en: 'ROOKIE BOT', desc: '識贏唔識守 · takes wins, never blocks' },
-  { id: 'guard', zh: '保安系統', en: 'GUARD SYSTEM', desc: '會擋你 · blocks your lines' },
-  { id: 'core', zh: '主機核心', en: 'MAINFRAME CORE', drawClears: true, desc: '完美演算 · 打和即過關 · draw = clear' },
+  { id: 'rookie', zh: '新手機械人', en: 'ROOKIE BOT', desc: '識贏唔識守', descEn: 'Takes wins, never blocks' },
+  { id: 'guard', zh: '保安系統', en: 'GUARD SYSTEM', desc: '會擋你', descEn: 'Blocks your lines' },
+  { id: 'core', zh: '主機核心', en: 'MAINFRAME CORE', drawClears: true, desc: '完美演算 · 打和即過關', descEn: 'Perfect play · a draw clears' },
 ];
-export function xoAI(id, b, me, rng = Math.random) {
+export function xoAI(id, b, me, rng = Math.random, blunder = 0) {
   const other = me === 'X' ? 'O' : 'X';
+  if (id === 'endless') { const empty = b.map((v, i) => v ? -1 : i).filter(i => i >= 0); return rng() < blunder ? empty[Math.floor(rng() * empty.length)] : bestMove(b, me, rng); }
   const empty = b.map((v, i) => v ? -1 : i).filter(i => i >= 0);
   const rnd = () => empty[Math.floor(rng() * empty.length)];
   if (id === 'core') return bestMove(b, me, rng);
@@ -89,3 +90,23 @@ export const REACT_TIERS = [
 export const reactTier = (ms) => REACT_TIERS.find(t => ms <= t[0]);
 /** average of valid tries (false starts excluded) */
 export const reactAverage = (tries) => { const v = tries.filter(t => t > 0); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0; };
+
+// ---------------------------------------------------------------- endless (beyond the authored ladders)
+const lerpCap = (n, a, b, tau) => a + (b - a) * (1 - Math.exp(-Math.max(0, n) / tau));
+const RPS_TAGS = [['霓虹', 'NEON'], ['量子', 'QUANTUM'], ['鉻鋼', 'CHROME'], ['幻象', 'PHANTOM'], ['等離子', 'PLASMA'], ['虛空', 'VOID']];
+/** RPS opponent for ladder index i (unbounded). Endless rivals alternate hunter/oracle brains and need more wins (capped at best of 7). */
+export function rpsOpponent(i) {
+  if (i < RPS_OPPONENTS.length) return { ...RPS_OPPONENTS[i], need: RPS_WINS_NEEDED, idx: i };
+  const e = i - RPS_OPPONENTS.length, base = RPS_OPPONENTS[1 + (e % 2)], tag = RPS_TAGS[Math.floor(e / 2) % RPS_TAGS.length];
+  return { ...base, idx: i, endless: true, zh: `${tag[0]}${base.zh} #${e + 1}`, en: `${tag[1]} ${base.en} #${e + 1}`, need: Math.min(4, 2 + Math.floor(e / 4)) };
+}
+/** XO opponent for stage index i (unbounded). Endless stages = perfect AI that blunders less and less (capped at 4 %); a draw clears. */
+export function xoOpponent(i) {
+  if (i < XO_OPPONENTS.length) return { ...XO_OPPONENTS[i], idx: i };
+  const e = i - XO_OPPONENTS.length;
+  return { id: 'endless', idx: i, endless: true, drawClears: true, zh: `超頻核心 Lv.${e + 1}`, en: `OVERCLOCK CORE Lv.${e + 1}`,
+    desc: '打和過關 · 贏有額外分', descEn: 'Draw clears · wins score extra', blunder: lerpCap(e, 0.22, 0.04, 8) };
+}
+/** reaction gauntlet: target average (ms) for round r (0-based) — tightens from 450 ms and saturates at 300 ms */
+export const reactTarget = (r) => Math.round(lerpCap(r, 450, 300, 6));
+export const isMilestone = (n, every = 5) => n > 0 && n % every === 0;

@@ -1,6 +1,6 @@
 # CYBER MINI PACK 賽博小遊戲 — Handoff
 
-Status: **web build done (v1.0)** · live https://fung2222.github.io/cyber-mini-pack/ · not yet packaged for Android.
+Status: **web build v1.1 — bilingual + endless** · live https://fung2222.github.io/cyber-mini-pack/ · not yet packaged for Android.
 Series rules: `fung2222/cyber-arcade/docs/ARCADE-HANDOFF.md`. Replaces SONO's separate RPS / XO / reaction pages with ONE app; concept only, all code is new.
 
 ## 1. Design
@@ -10,6 +10,12 @@ Series rules: `fung2222/cyber-arcade/docs/ARCADE-HANDOFF.md`. Replaces SONO's se
 - **神經反射 Reaction**: 5 tries (`REACT_TRIES`), random delay 1.4–4.2 s (`REACT_DELAY`), timed with `performance.now()` from the frame GO is shown. Tapping during the wait = false start (try counts as −1, excluded from the average). Tiers in `REACT_TIERS` (≤180 神經超頻 … >350 要飲杯咖啡). Saves best average `reactBest` (lower is better).
 - Result screen is shared: kicker, title, 4 stats, main (next/rematch/again), reward (RPS only), mode select.
 - `?demo=1` cycles RPS → XO → React with auto-play and auto-advance (undo button hidden in demo).
+
+### v1.1 — endless + bilingual
+- `rpsOpponent(i)`: 0–2 authored; 3+ = endless rivals alternating hunter/oracle, named `<tag><name> #n`, `need` wins = min(4, 2 + floor(e/4)). Ladder index saved (`rpsRival`); milestone every 5 rivals (theme shift + champion jingle). Streak/best streak unchanged (`rpsStreak`, `rpsBest`).
+- `xoOpponent(i)`: 0–2 authored; 3+ = `OVERCLOCK CORE Lv.n` (`id: 'endless'`): minimax with a blunder chance 22 % → 4 % (capped), `drawClears`. Stage saved (`xoStage`), best stage `xoBest`, real wins vs endless cores `xoCoreWins`. No ladder reset any more.
+- Reaction gauntlet: round r needs average < `reactTarget(r)` (450 → 300 ms, capped); pass → next round, fail → round 1. Saves `reactBest` (best average) and `reactBestRound`.
+- i18n: cyber-kit v0.2.1; strings in `js/strings.js`; HTML `data-i18n*`; toggles `#btn-lang` (mode select) + `#btn-lang2` (pause); `?lang=en|zh`.
 
 ## 2. Controls
 Mode cards / 1-2-3 · RPS buttons / 1 rock 2 paper 3 scissors · XO tap cell (raycast on the 3D board), mouse hover, arrows + Enter · Z undo · reaction: tap anywhere / Space · ‹ back to modes · P pause · M mute · Esc on result = modes. Android back: dialog → pause → resume; result → modes.
@@ -21,14 +27,15 @@ css/game.css     layout incl. portrait rules
 js/rules.js      pure logic: RPS results + 3 AIs, XO winner/minimax + 3 AIs, reaction tiers/average (unit-tested)
 js/arena.js      platform, sigils (rock/paper/scissors original geometry), XO grid + marks + line beam, reaction orb, attract showcase
 js/audio.js      MiniAudio (cyber-kit SynthAudio, 'chill' music)
+js/strings.js    zh-HK / en strings
 js/main.js       state machine, the three modes, result screen, ads hooks, demo, input, camera framing
-vendor/cyber-kit cyber-kit v0.1.0
+vendor/cyber-kit cyber-kit v0.2.1
 tests/           rules.test.mjs, smoke.py
 ```
 Test hook: `window.__mini` (state, mode, rps, xo, react, `api.enter/rpsPick/xoHuman/reactTap/cellScreen`).
 
 ## 4. Tests
-`node tests/rules.test.mjs` (9 tests) · `python tests/smoke.py [url] [out]` — 412×915 touch + 1280×800: mode select, RPS full best-of-3 via buttons + keys, XO taps on 3D cells + undo + result, reaction false start + timed taps + result, pause/resume/back, demo advances modes, zero console errors. Also verified: a draw vs MAINFRAME CORE shows 頂住主機！ and resets the ladder. Last run 2026-10-02: ALL PASSED.
+`node tests/rules.test.mjs` (12 tests incl. endless opponents/targets) · `python tests/smoke.py [url] [out]` — 412×915 touch + 1280×800: mode select, RPS full best-of-3 via buttons + keys, XO taps on 3D cells + undo + result, reaction false start + timed taps + result, pause/resume/back, demo advances modes, language toggle + persistence, English mode select, endless RPS rival 4 / XO stage 13 / reaction round 7, `?lang=zh`, zero console errors. Also verified: a draw vs MAINFRAME CORE shows 頂住主機！ and resets the ladder. Last run 2026-10-02: ALL PASSED.
 
 ## 5. Android packaging
 As DATA FUSE (Capacitor 8 + `@capacitor-community/admob` v8; app id suggestion `hk.fung2222.cyberminipack`; portrait + landscape both fine).

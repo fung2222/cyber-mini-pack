@@ -13,6 +13,17 @@
 | **過三關** TIC-TAC-TOE LADDER | 你係 ✕，喺 3D 棋盤上撳格落子。三關 AI：新手機械人 → 保安系統 → 主機核心（完美演算，**打和即過關**）。每局有 1 次免費悔棋，再悔要睇廣告（網頁版免費）。先手每局輪流。 |
 | **神經反射** REACTION TEST | 光球轉綠即刻撳，一共 5 次，計平均反應時間同評級。綠燈前撳 = 偷步（該次作廢）。記錄最佳平均。 |
 
+## 無盡模式 Endless
+- **包剪揼**：頭 3 個對手之後，係程式生成嘅無盡對手（模式獵人／讀心神算輪流，霓虹／量子／鉻鋼… 變種），越後越要贏多局（最多七局四勝）。每闖 5 位對手係一個里程碑（換主題）。記錄最佳連勝。
+- **過三關**：第 4 關起係「超頻核心 Lv.N」—— 近乎完美嘅 AI，失誤率越嚟越低（最低 4%）；打和即過關，贏咗有額外紀錄。記錄最遠關卡。
+- **神經反射**：一輪 5 次，平均要快過目標（由 450 ms 收緊到 300 ms 封頂）先可以入下一輪；失敗就由第 1 輪再嚟。記錄最佳平均同最高輪數。
+
+## 語言 Language
+繁體中文（香港）／English，喺選單或暫停畫面撳「EN／中」切換，記低喺 `localStorage cyber.lang`（所有 CYBER 遊戲共用）；亦可用 `?lang=en` / `?lang=zh`。
+
+## English
+**CYBER MINI PACK** puts three street classics in one cyberpunk 3D app, each an endless challenge: **Rock Paper Scissors** against an endless line of pattern-reading AI rivals (longer matches as you go, best streak saved), **Tic-Tac-Toe** stages against an ever sharper near-perfect core (a draw clears; best stage saved) and a **Reaction gauntlet** whose target average tightens every round (450 → 300 ms). Tap/keyboard controls, bilingual Traditional Chinese / English with an in-game toggle.
+
 ## 操作 Controls
 | 動作 | 手機 | 鍵盤 |
 |---|---|---|

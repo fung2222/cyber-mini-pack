@@ -1,7 +1,8 @@
 // CYBER MINI PACK — one app, three modes: 包剪揼 (RPS AI ladder), 過三關 (XO AI ladder), 神經反射 (reaction test).
 import * as THREE from 'three';
-import { flags, createStore, createStage, ThemeController, U, Particles, Shockwaves, FxState, NeonCity, createInput, CyberUI, Platform, createAds } from 'cyber-kit';
-import { GAME_ID, RPS, RPS_ZH, rpsResult, rpsAI, RPS_OPPONENTS, RPS_WINS_NEEDED, xoWinner, xoAI, XO_OPPONENTS, REACT_TRIES, REACT_DELAY, reactTier, reactAverage } from './rules.js';
+import { i18n, t, flags, createStore, createStage, ThemeController, U, Particles, Shockwaves, FxState, NeonCity, createInput, CyberUI, Platform, createAds } from 'cyber-kit';
+import { GAME_ID, RPS, rpsResult, rpsAI, xoWinner, xoAI, REACT_TRIES, REACT_DELAY, REACT_TIERS, reactTier, reactAverage, rpsOpponent, xoOpponent, reactTarget, isMilestone } from './rules.js';
+import './strings.js';
 import { Arena, PLAT_Y } from './arena.js';
 import { MiniAudio } from './audio.js';
 
@@ -21,28 +22,38 @@ const fx = new FxState();
 const audio = new MiniAudio(store); ui.setMuted(audio.muted);
 const ads = createAds({ gameId: GAME_ID, interstitialCooldownSec: 180, breaksBetweenInterstitials: 3, graceSec: 150, units: { android: {} }, onAdOpen: (on) => audio.duckAll(on) });
 const MODE_THEME = { attract: 1, rps: 2, xo: 3, react: 4 };
-const MODE_NAME = { rps: ['包剪揼', 'RPS'], xo: ['過三關', 'TIC-TAC-TOE'], react: ['神經反射', 'REACTION'] };
+const MODE_KEY = { rps: 'm.rps', xo: 'm.xo', react: 'm.react' };
+const oName = (o) => i18n.lang === 'en' ? o.en : o.zh, oDesc = (o) => i18n.lang === 'en' ? o.descEn : o.desc;
+const mv = (m) => t(m);
+const tierName = (tier) => t('tier.' + REACT_TIERS.indexOf(tier));
 
 const S = { state: 'menu', mode: 'attract', demo: !!flags.demo, timers: [], t: 0,
   rps: { opp: 0, p: 0, a: 0, history: [], phase: 'choose', streak: store.getNum('rpsStreak', 0) },
-  xo: { opp: 0, board: Array(9).fill(null), turn: 'X', first: 'X', moves: [], over: false, undo: 1, streak: 0 },
-  react: { tries: [], phase: 'idle', goAt: 0, waitT: 0 } };
+  xo: { opp: store.getNum('xoStage', 0), board: Array(9).fill(null), turn: 'X', first: 'X', moves: [], over: false, undo: 1, streak: 0 },
+  react: { tries: [], phase: 'idle', goAt: 0, waitT: 0, round: 0 } };
+S.rps.opp = store.getNum('rpsRival', 0);
 window.__mini = S;  // test hook
 const later = (t, fn) => S.timers.push({ t, fn });
 const msg = (txt, big = false) => { const e = $('mp-msg'); e.textContent = txt; e.classList.toggle('big', big); };
 const setScore = (txt) => ui.setText('mp-score', txt);
 
 function setState(s) { S.state = s; ui.show({ menu: 'start', paused: 'pause', result: 'result' }[s] || null); ui.hud(s === 'play' || s === 'paused' || s === 'result'); $('demo-tag').classList.toggle('hidden', !S.demo); }
+function hudRefresh() {
+  if (S.mode === 'rps') { ui.setText('hud-opp', t('vs', { name: oName(rpsOpponent(S.rps.opp)) })); ui.setText('hud-stat-label', t('streak')); ui.setText('hud-stat', S.rps.streak); }
+  else if (S.mode === 'xo') { ui.setText('hud-opp', t('vs', { name: oName(xoOpponent(S.xo.opp)) })); ui.setText('hud-stat-label', t('stage')); ui.setText('hud-stat', S.xo.opp + 1); }
+  else if (S.mode === 'react') { ui.setText('hud-opp', t('ready')); ui.setText('hud-stat-label', t('round')); ui.setText('hud-stat', S.react.round + 1); }
+  if (S.mode !== 'attract') ui.setText('hud-mode', t(MODE_KEY[S.mode]));
+}
 function refreshMenu() {
-  ui.setText('mc-rps', `最佳連勝 BEST STREAK ${store.getNum('rpsBest', 0)} · 3 個 AI 性格`);
-  ui.setText('mc-xo', `已擊敗 ${store.getNum('xoBeaten', 0)}/3 · 冠軍 ×${store.getNum('xoChamp', 0)}`);
-  const rb = store.getNum('reactBest', 0); ui.setText('mc-react', rb ? `最佳平均 BEST ${rb} ms` : '綠燈一著即撳 · 偷步會被捉');
+  ui.setText('mc-rps', t('mc.rps', { n: store.getNum('rpsBest', 0) }));
+  ui.setText('mc-xo', t('mc.xo', { n: Math.max(1, store.getNum('xoBest', store.getNum('xoBeaten', 0) + 1)) }));
+  const rb = store.getNum('reactBest', 0); ui.setText('mc-react', rb ? t('mc.react', { ms: rb, r: store.getNum('reactBestRound', 1) }) : t('mc.reactNew'));
 }
 function showMenu() { S.timers = []; S.mode = 'attract'; arena.setMode('attract'); theme.set(1); refreshMenu(); setState('menu'); }
 function enterMode(m) {
   audio.init(); audio.startMusic(); audio.click();
   S.timers = []; S.mode = m; arena.setMode(m); theme.set(MODE_THEME[m]);
-  ui.setText('hud-mode', MODE_NAME[m][0]); $('hud-mode').insertAdjacentHTML('beforeend', ` <span>${MODE_NAME[m][1]}</span>`);
+  ui.setText('hud-mode', t(MODE_KEY[m]));
   $('rps-bar').classList.toggle('hidden', m !== 'rps'); $('btn-undo').classList.toggle('hidden', m !== 'xo' || S.demo);
   setState('play'); msg(''); setScore('');
   if (m === 'rps') rpsStartMatch(); else if (m === 'xo') xoStartGame(); else reactStart();
@@ -51,17 +62,16 @@ function enterMode(m) {
 // ================================================================ 包剪揼
 function rpsStartMatch() {
   const R = S.rps; R.p = 0; R.a = 0; R.history = []; R.phase = 'choose';
-  const o = RPS_OPPONENTS[R.opp]; arena.setHeadColor([0xff2bd6, 0xffc22b, 0xa66bff][R.opp]); arena.clearSigils();
-  ui.setText('hud-opp', `VS ${o.zh}`); ui.setText('hud-stat-label', '連勝 '); $('hud-stat-label').insertAdjacentHTML('beforeend', '<span>STREAK</span>'); ui.setText('hud-stat', R.streak);
-  setScore(`0 : 0`); msg(`${o.zh} · ${o.desc}`); rpsButtons(true);
-  ui.banner(`對手 ${R.opp + 1}/3`, `${o.en}`, '三局兩勝 · BEST OF 3');
+  const o = rpsOpponent(R.opp); R.need = o.need; arena.setHeadColor([0xff2bd6, 0xffc22b, 0xa66bff, 0x00e5ff, 0x3bff8a][R.opp % 5]); arena.clearSigils();
+  hudRefresh(); setScore(`0 : 0`); msg(`${oName(o)} · ${oDesc(o)}`); rpsButtons(true);
+  ui.banner(t('oppN', { n: R.opp + 1 }), oName(o) + (o.endless ? ' · ' + t('endlessOn') : ''), t('bestOf', { n: o.need * 2 - 1, w: o.need }));
 }
 function rpsButtons(on, picked) { document.querySelectorAll('.rps-btn').forEach(b => { b.disabled = !on; b.classList.toggle('picked', b.dataset.move === picked); }); }
 function rpsPick(move) {
   const R = S.rps; if (S.state !== 'play' || S.mode !== 'rps' || R.phase !== 'choose') return;
   R.phase = 'count'; rpsButtons(false, move); arena.clearSigils();
-  const ai = rpsAI(RPS_OPPONENTS[R.opp].id, R.history);
-  ['包', '剪', '揼！'].forEach((w, i) => later(i * 0.32, () => { msg(w, true); audio.beat(i); arena.pulse(0, 0, 0.6); fx.kick({ trauma: 0.04 }); }));
+  const ai = rpsAI(rpsOpponent(R.opp).id, R.history);
+  [t('beats1'), t('beats2'), t('beats3')].forEach((w, i) => later(i * 0.32, () => { msg(w, true); audio.beat(i); arena.pulse(0, 0, 0.6); fx.kick({ trauma: 0.04 }); }));
   later(1.0, () => rpsReveal(move, ai));
 }
 function rpsReveal(p, a) {
@@ -69,43 +79,42 @@ function rpsReveal(p, a) {
   arena.showSigils(p, a); audio.reveal();
   const pp = arena.sigilPos(0), ap = arena.sigilPos(1);
   later(0.4, () => {
-    if (r === 0) { msg(`和！ ${RPS_ZH[p]} vs ${RPS_ZH[a]} · DRAW`); audio.draw(); }
+    if (r === 0) { msg(t('draw', { p: mv(p), a: mv(a) })); audio.draw(); }
     else {
       const winP = r > 0 ? pp : ap, loseI = r > 0 ? 1 : 0; arena.shatter(loseI);
       const c = new THREE.Color(r > 0 ? 0x00e5ff : 0xff2bd6);
       particles.burst(r > 0 ? ap : pp, c, 60, { speed: 6, up: 3, life: 0.8, size: 1 }); waves.spawn(winP.clone().setY(PLAT_Y + 0.05), c, { r0: 0.3, r1: 4, h: 0.6, dur: 0.6 });
-      if (r > 0) { R.p++; msg(`${RPS_ZH[p]} 贏 ${RPS_ZH[a]}！ · POINT`); audio.win(); Platform.haptic('medium'); } else { R.a++; msg(`${RPS_ZH[a]} 贏 ${RPS_ZH[p]}… · AI POINT`); audio.lose(); arena.headMood = 1; Platform.haptic('warning'); }
+      if (r > 0) { R.p++; msg(t('point', { p: mv(p), a: mv(a) })); audio.win(); Platform.haptic('medium'); } else { R.a++; msg(t('aiPoint', { p: mv(p), a: mv(a) })); audio.lose(); arena.headMood = 1; Platform.haptic('warning'); }
       fx.kick({ trauma: 0.15, aberr: 0.6 });
     }
     setScore(`${R.p} : ${R.a}`);
-    if (R.p >= RPS_WINS_NEEDED || R.a >= RPS_WINS_NEEDED) later(1.0, rpsMatchEnd);
-    else later(0.9, () => { R.phase = 'choose'; rpsButtons(true); msg('再嚟！揀一樣 · CHOOSE'); });
+    if (R.p >= R.need || R.a >= R.need) later(1.0, rpsMatchEnd);
+    else later(0.9, () => { R.phase = 'choose'; rpsButtons(true); msg(t('again')); });
   });
 }
 function rpsMatchEnd() {
-  const R = S.rps, won = R.p > R.a, o = RPS_OPPONENTS[R.opp];
+  const R = S.rps, won = R.p > R.a, o = rpsOpponent(R.opp);
   let record = false;
   if (won) { R.streak++; if (R.streak > store.getNum('rpsBest', 0)) { store.setNum('rpsBest', R.streak); record = true; } R.lastLost = false; }
   else { R.lostStreak = R.streak; R.lastLost = true; R.streak = 0; }
   store.setNum('rpsStreak', R.streak);
-  const champ = won && R.opp === RPS_OPPONENTS.length - 1;
+  const ms = won && isMilestone(R.opp + 1);
   showResult({
-    kicker: `${o.en} · ${R.p} : ${R.a}`, title: champ ? '包剪揼之王！' : won ? '你贏咗！' : '輸咗…', en: champ ? 'RPS CHAMPION' : won ? 'YOU WIN' : 'YOU LOSE', record, danger: !won,
-    stats: [['比分', `${R.p}:${R.a}`], ['連勝', R.streak], ['最佳連勝', store.getNum('rpsBest', 0)], ['對手', `${R.opp + 1}/3`]],
-    main: won ? (champ ? ['由頭再嚟', 'NEW LADDER · ENTER'] : ['下一位對手', 'NEXT OPPONENT · ENTER']) : ['再挑戰', 'REMATCH · ENTER'],
-    reward: !won && R.lostStreak > 0 ? `保住 ${R.lostStreak} 連勝` : null,
+    kicker: `${oName(o)} · ${R.p} : ${R.a}`, title: won ? t('win') : t('lose'), en: ms ? t('milestone') + ' ' + t('milestoneRps', { n: R.opp + 1 }) : '', record, danger: !won,
+    stats: [[t('score'), `${R.p}:${R.a}`], [t('streak'), R.streak], [t('bestStreak'), store.getNum('rpsBest', 0)], [t('rival'), R.opp + 1]],
+    main: won ? [t('nextRival'), 'ENTER'] : [t('rematch'), 'ENTER'],
+    reward: !won && R.lostStreak > 0 ? t('keepStreakN', { n: R.lostStreak }) : null,
   });
-  if (won) { R.opp = champ ? 0 : R.opp + 1; if (champ) audio.champion(); else audio.win(); } else audio.lose();
+  if (won) { R.opp++; store.setNum('rpsRival', R.opp); if (ms) { audio.champion(); theme.set(2 + (R.opp / 5) % 4); } else audio.win(); } else audio.lose();
 }
 
 // ================================================================ 過三關
 function xoStartGame() {
   const X = S.xo; X.board = Array(9).fill(null); X.moves = []; X.over = false; X.undo = 1; arena.xoClear();
-  const o = XO_OPPONENTS[X.opp]; arena.setHeadColor([0x3bff8a, 0xffc22b, 0xff3b5c][X.opp]);
-  ui.setText('hud-opp', `VS ${o.zh}`); ui.setText('hud-stat-label', '關卡 '); $('hud-stat-label').insertAdjacentHTML('beforeend', '<span>STAGE</span>'); ui.setText('hud-stat', `${X.opp + 1}/3`);
-  setScore('✕ 你 · ◯ AI'); xoUndoBadge();
-  ui.banner(`第 ${X.opp + 1} 關`, o.en, o.desc);
-  X.turn = X.first; if (X.turn === 'O') { msg('對手先行… · AI FIRST'); later(0.9, xoAITurn); } else msg('你先行 · YOUR MOVE');
+  const o = xoOpponent(X.opp); arena.setHeadColor([0x3bff8a, 0xffc22b, 0xff3b5c, 0xa66bff, 0x00e5ff][X.opp % 5]);
+  hudRefresh(); setScore(t('youO')); xoUndoBadge();
+  ui.banner(t('stageN', { n: X.opp + 1 }), oName(o), oDesc(o));
+  X.turn = X.first; if (X.turn === 'O') { msg(t('aiFirst')); later(0.9, xoAITurn); } else msg(t('youFirst'));
 }
 function xoUndoBadge() { const b = $('undo-badge'); if (S.xo.undo > 0) { b.textContent = S.xo.undo; b.classList.remove('ad'); } else { b.textContent = ads.isNative ? 'AD' : '+1'; b.classList.add('ad'); } }
 function xoPlay(i, who) {
@@ -115,83 +124,86 @@ function xoPlay(i, who) {
   const w = xoWinner(X.board);
   if (w) { X.over = true; later(0.25, () => xoEnd(w)); return true; }
   X.turn = who === 'X' ? 'O' : 'X';
-  if (X.turn === 'O') { msg('對手諗緊… · THINKING'); later(0.55, xoAITurn); } else msg('到你 · YOUR MOVE');
+  if (X.turn === 'O') { msg(t('thinking')); later(0.55, xoAITurn); } else msg(t('yourMove'));
   return true;
 }
-function xoAITurn() { const X = S.xo; if (X.over || S.mode !== 'xo' || S.state !== 'play') return; xoPlay(xoAI(XO_OPPONENTS[X.opp].id, X.board.slice(), 'O'), 'O'); }
+function xoAITurn() { const X = S.xo; if (X.over || S.mode !== 'xo' || S.state !== 'play') return; const o = xoOpponent(X.opp); xoPlay(xoAI(o.id, X.board.slice(), 'O', Math.random, o.blunder || 0), 'O'); }
 function xoHuman(i) {
   const X = S.xo; if (S.state !== 'play' || S.mode !== 'xo' || X.turn !== 'X' || X.over || i < 0) return;
   if (S.demo) return; xoPlay(i, 'X'); Platform.haptic('light');
 }
 async function xoUndo() {
   const X = S.xo; if (S.mode !== 'xo' || S.state !== 'play' || X.over || X.turn !== 'X' || ui.modalOpen) return;
-  if (X.moves.length < 2) { audio.denied(); ui.toast('未有得悔棋 · NOTHING TO UNDO'); return; }
+  if (X.moves.length < 2) { audio.denied(); ui.toast(t('noUndo')); return; }
   if (X.undo <= 0) {
-    const ok = await ui.confirm(ads.isNative ? { kicker: 'UNDO', title: '悔多一步？', text: '睇一段自願觀看嘅獎勵廣告。', ok: '睇廣告', okSmall: 'WATCH AD', cancel: '唔使喇', cancelSmall: 'NO THANKS' } : { kicker: 'UNDO', title: '悔多一步', text: '網頁版免費。(App 版會用自願觀看嘅獎勵廣告。)', ok: '領取', okSmall: 'CLAIM', cancel: '唔使喇', cancelSmall: 'NO THANKS' });
+    const ok = await ui.confirm(ads.isNative ? { kicker: t('undo'), title: t('undoAdT'), text: t('undoAdTxt'), ok: t('watchAd'), okSmall: '', cancel: t('kit.noThanks'), cancelSmall: '' } : { kicker: t('undo'), title: t('undoWebT'), text: t('undoWebTxt'), ok: t('claim'), okSmall: '', cancel: t('kit.noThanks'), cancelSmall: '' });
     if (!ok) return; const r = await ads.rewarded('xo-undo'); if (!r.rewarded) return; X.undo++;
   }
   X.undo--; for (let k = 0; k < 2; k++) { const i = X.moves.pop(); X.board[i] = null; arena.xoUnplace(i); }
-  audio.back(); fx.kick({ aberr: 0.5 }); xoUndoBadge(); msg('已悔棋 · UNDONE');
+  audio.back(); fx.kick({ aberr: 0.5 }); xoUndoBadge(); msg(t('undone'));
 }
 function xoEnd(w) {
-  const X = S.xo, o = XO_OPPONENTS[X.opp];
+  const X = S.xo, o = xoOpponent(X.opp);
   if (w.line) { arena.xoLine(w.line, w.w === 'X' ? 0x00e5ff : 0xff2bd6); for (const i of w.line) particles.burst(arena.cellPos(i), new THREE.Color(w.w === 'X' ? 0x00e5ff : 0xff2bd6), 30, { speed: 4, up: 4, life: 0.8 }); fx.kick({ trauma: 0.2, aberr: 0.8 }); }
   const held = w.w === 'draw' && !!o.drawClears, won = w.w === 'X' || held, draw = w.w === 'draw' && !held;
   X.first = X.first === 'X' ? 'O' : 'X';
   let record = false;
-  if (won) { X.streak++; const beaten = Math.max(store.getNum('xoBeaten', 0), X.opp + 1); if (beaten > store.getNum('xoBeaten', 0)) { store.setNum('xoBeaten', beaten); record = true; } }
-  const champ = won && X.opp === XO_OPPONENTS.length - 1; if (champ) store.setNum('xoChamp', store.getNum('xoChamp', 0) + 1);
+  if (won) { X.streak++; const reached = X.opp + 2; if (reached > store.getNum('xoBest', 1)) { store.setNum('xoBest', reached); record = true; } }
+  const champ = won && isMilestone(X.opp + 1); const realWin = w.w === 'X';
   if (won) { champ ? audio.champion() : audio.win(); Platform.haptic('success'); } else if (draw) audio.draw(); else { audio.lose(); arena.headMood = 1; }
+  if (realWin && o.endless) store.setNum('xoCoreWins', store.getNum('xoCoreWins', 0) + 1);
   later(1.1, () => showResult({
-    kicker: `STAGE ${X.opp + 1} · ${o.en}`, title: held ? '頂住主機！' : champ ? '過晒三關！' : won ? '過關！' : draw ? '和局' : '輸咗…', en: champ ? 'LADDER CLEARED' : won ? 'STAGE CLEAR' : draw ? 'DRAW' : 'YOU LOSE', record, danger: !won && !draw,
-    stats: [['結果', won ? '勝 WIN' : draw ? '和 DRAW' : '負 LOSS'], ['步數', X.moves.length], ['已擊敗', `${store.getNum('xoBeaten', 0)}/3`], ['冠軍次數', store.getNum('xoChamp', 0)]],
-    main: won ? (champ ? ['由第一關再嚟', 'NEW LADDER · ENTER'] : ['下一關', 'NEXT STAGE · ENTER']) : ['再嚟一局', 'REMATCH · ENTER'], reward: null,
+    kicker: `${t('stageN', { n: X.opp })} · ${oName(o)}`, title: held ? t('held') : won ? t('cleared') : draw ? t('xoDraw') : t('lose'), en: champ ? t('milestone') : '', record, danger: !won && !draw,
+    stats: [[t('result'), realWin ? t('rWin') : (draw || held) ? t('rDraw') : t('rLoss')], [t('moves'), X.moves.length], [t('bestStage'), store.getNum('xoBest', 1)], [t('winBonus'), store.getNum('xoCoreWins', 0)]],
+    main: won ? [t('nextStage'), 'ENTER'] : [t('replay'), 'ENTER'], reward: null,
   }));
-  if (won) X.opp = champ ? 0 : X.opp + 1;
+  if (won) { X.opp++; store.setNum('xoStage', X.opp); if (champ) theme.set(3 + (X.opp / 5) % 3); }
 }
 
 // ================================================================ 神經反射
 function reactStart() {
-  const Rx = S.react; Rx.tries = []; ui.setText('hud-opp', '準備好未？'); ui.setText('hud-stat-label', '最佳 '); $('hud-stat-label').insertAdjacentHTML('beforeend', '<span>BEST</span>');
-  ui.setText('hud-stat', store.getNum('reactBest', 0) ? store.getNum('reactBest', 0) + 'ms' : '—');
-  ui.banner('神經反射', 'REACTION TEST', `${REACT_TRIES} 次 · 綠燈先好撳`); reactArm(1.6);
+  const Rx = S.react; Rx.tries = []; hudRefresh();
+  ui.banner(t('roundN', { n: Rx.round + 1 }), t('m.react'), t('target', { ms: reactTarget(Rx.round) })); reactArm(1.6);
 }
 function reactArm(extra = 0) {
   const Rx = S.react; Rx.phase = 'wait'; Rx.waitT = extra + REACT_DELAY[0] + Math.random() * (REACT_DELAY[1] - REACT_DELAY[0]);
-  arena.setOrb('wait'); msg('等綠燈… · WAIT FOR GREEN', true); setScore(`${Rx.tries.length + 1} / ${REACT_TRIES}`); ui.setText('hud-opp', `第 ${Rx.tries.length + 1} 次`);
+  arena.setOrb('wait'); msg(t('wait'), true); setScore(`${Rx.tries.length + 1} / ${REACT_TRIES}`); ui.setText('hud-opp', t('tryN', { n: Rx.tries.length + 1 }));
 }
 function reactTap() {
   const Rx = S.react; if (S.state !== 'play' || S.mode !== 'react') return;
   if (Rx.phase === 'wait') {
     Rx.tries.push(-1); Rx.phase = 'foul'; arena.setOrb('foul'); audio.foul(); fx.kick({ glitch: 0.6, aberr: 1 }); ui.flash('rgba(255,194,43,0.3)', 300); Platform.haptic('error');
-    msg('偷步！ FALSE START', true); later(1.3, reactNext);
+    msg(t('falseStart'), true); later(1.3, reactNext);
   } else if (Rx.phase === 'go') {
     const ms = Math.max(1, Math.round(performance.now() - Rx.goAt)); Rx.tries.push(ms); Rx.phase = 'shown'; arena.setOrb('idle');
-    const tier = reactTier(ms); msg(`${ms} ms · ${tier[1]}`, true); audio.win(); Platform.haptic('light');
-    const sp = stage.toScreen(arena.orb.position.clone().add(new THREE.Vector3(0, 1.8, 0))); ui.popup(sp.x, sp.y, ms + 'ms', tier[2], ms < 250 ? 'big' : '');
+    const tier = reactTier(ms); msg(`${ms} ms · ${tierName(tier)}`, true); audio.win(); Platform.haptic('light');
+    const sp = stage.toScreen(arena.orb.position.clone().add(new THREE.Vector3(0, 1.8, 0))); ui.popup(sp.x, sp.y, ms + 'ms', tierName(tier), ms < 250 ? 'big' : '');
     particles.burst(arena.orb.position, new THREE.Color(0x3bff8a), 50, { speed: 5, up: 3, life: 0.7 }); waves.spawn(new THREE.Vector3(0, PLAT_Y + 0.05, 0), new THREE.Color(0x3bff8a), { r0: 1, r1: 6, h: 0.8, dur: 0.6 });
     later(1.2, reactNext);
   }
 }
 function reactNext() { const Rx = S.react; if (Rx.tries.length >= REACT_TRIES) reactEnd(); else reactArm(); }
 function reactEnd() {
-  const Rx = S.react, avg = reactAverage(Rx.tries), valid = Rx.tries.filter(t => t > 0), best1 = valid.length ? Math.min(...valid) : 0, fouls = Rx.tries.filter(t => t < 0).length;
+  const Rx = S.react, avg = reactAverage(Rx.tries), valid = Rx.tries.filter(x => x > 0), best1 = valid.length ? Math.min(...valid) : 0, fouls = Rx.tries.filter(t => t < 0).length;
   let record = false; const prev = store.getNum('reactBest', 0);
   if (avg && (!prev || avg < prev)) { store.setNum('reactBest', avg); record = true; }
-  const tier = avg ? reactTier(avg) : [0, '要再試過', 'TRY AGAIN'];
-  audio.champion();
-  showResult({ kicker: `AVERAGE ${avg || '—'} ms`, title: tier[1], en: tier[2], record, danger: !avg,
-    stats: [['平均', avg ? avg + 'ms' : '—'], ['最快', best1 ? best1 + 'ms' : '—'], ['偷步', fouls], ['最佳紀錄', store.getNum('reactBest', 0) ? store.getNum('reactBest', 0) + 'ms' : '—']],
-    main: ['再測一次', 'AGAIN · ENTER'], reward: null });
+  const target = reactTarget(Rx.round), passed = avg > 0 && avg < target, round = Rx.round + 1;
+  if (passed && round > store.getNum('reactBestRound', 0)) { store.setNum('reactBestRound', round); record = true; }
+  const tier = avg ? reactTier(avg) : null;
+  if (passed) audio.champion(); else audio.lose();
+  showResult({ kicker: `${t('roundN', { n: round })} · ${t('target', { ms: target })}`, title: passed ? t('passed') : t('gauntletOver'), en: tier ? `${avg} ms · ${tierName(tier)}` : t('needCoffee'), record, danger: !passed,
+    stats: [[t('avg'), avg ? avg + 'ms' : '—'], [t('fastest'), best1 ? best1 + 'ms' : '—'], [t('fouls'), fouls], [t('roundReached'), Math.max(1, store.getNum('reactBestRound', 0))]],
+    main: passed ? [t('nextRound'), 'ENTER'] : [t('tryAgain'), 'ENTER'], reward: null });
+  Rx.round = passed ? Rx.round + 1 : 0;
 }
 
 // ================================================================ result screen
 function showResult(o) {
-  ui.setText('res-kicker', o.kicker); const t = $('res-title'); t.textContent = o.title; t.dataset.text = o.title; t.classList.toggle('danger', !!o.danger);
+  ui.setText('res-kicker', o.kicker); const te = $('res-title'); te.textContent = o.title; te.dataset.text = o.title; te.classList.toggle('danger', !!o.danger);
   ui.setText('res-en', o.en); $('res-record').classList.toggle('hidden', !o.record);
   $('res-stats').innerHTML = o.stats.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
   ui.setText('res-main-zh', o.main[0]); ui.setText('res-main-en', o.main[1]);
-  const rw = $('btn-res-reward'); rw.classList.toggle('hidden', !o.reward || !ads.rewardedAvailable()); if (o.reward) { rw.querySelector('span').textContent = o.reward; ui.setText('res-reward-sub', ads.isNative ? 'KEEP STREAK · 睇段廣告' : 'KEEP STREAK · 免費 FREE'); }
+  const rw = $('btn-res-reward'); rw.classList.toggle('hidden', !o.reward || !ads.rewardedAvailable()); if (o.reward) { ui.setText('res-reward-main', o.reward); ui.setText('res-reward-sub', ads.isNative ? t('viaAd') : t('free')); }
   setState('result'); msg('');
   if (S.demo) later(2.4, () => demoNext());
 }
@@ -199,14 +211,14 @@ async function resultMain() { if (S.state !== 'result') return; audio.click(); a
 async function resultModes() { if (S.state !== 'result') return; audio.back(); await ads.naturalBreak('match'); showMenu(); }
 async function resultReward() {
   if (S.state !== 'result' || S.mode !== 'rps' || !S.rps.lastLost) return; const r = await ads.rewarded('rps-streak'); if (!r.rewarded) return;
-  S.rps.streak = S.rps.lostStreak; S.rps.lastLost = false; store.setNum('rpsStreak', S.rps.streak); ui.toast(`連勝保住咗：${S.rps.streak} · STREAK SAVED`); $('btn-res-reward').classList.add('hidden');
+  S.rps.streak = S.rps.lostStreak; S.rps.lastLost = false; store.setNum('rpsStreak', S.rps.streak); ui.toast(t('streakSaved', { n: S.rps.streak })); $('btn-res-reward').classList.add('hidden');
 }
 function pause() { if (S.state !== 'play') return; setState('paused'); audio.duckMusic(); }
 function resume() { if (S.state !== 'paused') return; setState('play'); audio.unduckMusic(); if (S.mode === 'react' && S.react.phase === 'go') reactArm(); }
 
 // ================================================================ demo autoplay
 const DEMO_SEQ = ['rps', 'xo', 'react'];
-function demoNext() { const i = (DEMO_SEQ.indexOf(S.mode) + (S.state === 'result' ? 1 : 0)) % 3; if (S.state === 'result' && S.mode === 'rps' && Math.max(S.rps.p, S.rps.a) < 2) return; enterMode(DEMO_SEQ[i]); }
+function demoNext() { const i = (DEMO_SEQ.indexOf(S.mode) + (S.state === 'result' ? 1 : 0)) % 3; if (S.state === 'result' && S.mode === 'rps' && Math.max(S.rps.p, S.rps.a) < (S.rps.need || 2)) return; enterMode(DEMO_SEQ[i]); }
 function demoTick(dt) {
   if (!S.demo || S.state !== 'play') return;
   S.demoT = (S.demoT || 0) + dt;
@@ -246,29 +258,31 @@ S.api = { enter: enterMode, rpsPick, xoHuman, reactTap, cellScreen: (i) => stage
 
 // ================================================================ camera + loop
 const camPos = new THREE.Vector3(0, 14, 14), camLook = new THREE.Vector3(0, PLAT_Y, 0), tP = new THREE.Vector3(), tL = new THREE.Vector3();
-function frameCamera(dt, t, instant = false) {
+function frameCamera(dt, now, instant = false) {
   const aspect = stage.width / stage.height, portrait = aspect < 0.9, menu = S.state === 'menu';
   const vfov = portrait ? 52 : 42; camera.fov = vfov + fx.fovKick * 3; camera.updateProjectionMatrix();
   const pitch = THREE.MathUtils.degToRad(menu ? 32 : S.mode === 'xo' ? (portrait ? 64 : 56) : (portrait ? 46 : 38));
   const R = 5.7, tanV = Math.tan(THREE.MathUtils.degToRad(vfov / 2)), tanH = tanV * aspect;
   let d = Math.max(R / (tanH * 0.95), (R * Math.sin(pitch) + 2.5 * Math.cos(pitch)) / (tanV * (portrait ? 0.6 : 0.8))) + R * 0.5;
-  let yaw = Math.sin(t * 0.13) * 0.05, lx = 0, ly = PLAT_Y + (S.mode === 'xo' ? 0.2 : 1.2), lz = portrait && !menu ? 0.6 : 0;
-  if (menu) { yaw = t * 0.12; d *= portrait ? 1.0 : 0.85; if (!portrait) lx = 0; ly = PLAT_Y + (portrait ? -4.2 : 1.5); }
+  let yaw = Math.sin(now * 0.13) * 0.05, lx = 0, ly = PLAT_Y + (S.mode === 'xo' ? 0.2 : 1.2), lz = portrait && !menu ? 0.6 : 0;
+  if (menu) { yaw = now * 0.12; d *= portrait ? 1.0 : 0.85; d = Math.min(d, 16.5); if (!portrait) lx = 0; ly = PLAT_Y + (portrait ? -4.2 : 1.5); }
   tL.set(lx, ly, lz); tP.set(Math.sin(yaw) * Math.cos(pitch) * d, Math.sin(pitch) * d, Math.cos(yaw) * Math.cos(pitch) * d).add(tL);
   if (menu && !portrait) { const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw)); tL.addScaledVector(right, -5.5); tP.addScaledVector(right, -5.5); }
-  const k = instant ? 1 : 1 - Math.exp(-dt * 3); camPos.lerp(tP, k); camLook.lerp(tL, k); camera.position.copy(camPos); camera.lookAt(camLook); fx.shake(camera, t, 0.6);
+  const k = instant ? 1 : 1 - Math.exp(-dt * 3); camPos.lerp(tP, k); camLook.lerp(tL, k); camera.position.copy(camPos); camera.lookAt(camLook); fx.shake(camera, now, 0.6);
 }
-function tick(dt, t) {
-  S.t += dt; U.uTime.value = t; theme.update(dt); fx.update(dt);
+function tick(dt, now) {
+  S.t += dt; U.uTime.value = now; theme.update(dt); fx.update(dt);
   if (S.state !== 'paused') {
     for (const tm of S.timers.slice()) { tm.t -= dt; if (tm.t <= 0) { const i = S.timers.indexOf(tm); if (i >= 0) S.timers.splice(i, 1); tm.fn(); } }
     const Rx = S.react;
-    if (S.mode === 'react' && S.state === 'play' && Rx.phase === 'wait') { Rx.waitT -= dt; if (Rx.waitT <= 0) { Rx.phase = 'go'; Rx.goAt = performance.now(); arena.setOrb('go'); audio.go(); msg('撳！ TAP!', true); ui.flash('rgba(59,255,138,0.25)', 200); } }
+    if (S.mode === 'react' && S.state === 'play' && Rx.phase === 'wait') { Rx.waitT -= dt; if (Rx.waitT <= 0) { Rx.phase = 'go'; Rx.goAt = performance.now(); arena.setOrb('go'); audio.go(); msg(t('go'), true); ui.flash('rgba(59,255,138,0.25)', 200); } }
     demoTick(dt);
   }
-  arena.update(dt, t); particles.update(dt); waves.update(dt);
-  city.update(t, dt, camera); frameCamera(dt, t); fx.applyPost(stage, t); ui.tick(dt); stage.render(dt);
+  arena.update(dt, now); particles.update(dt); waves.update(dt);
+  city.update(now, dt, camera); frameCamera(dt, now); fx.applyPost(stage, now); ui.tick(dt); stage.render(dt);
 }
+i18n.bindToggle($('btn-lang')); i18n.bindToggle($('btn-lang2'));
+i18n.onChange(() => { refreshMenu(); hudRefresh(); });
 async function boot() {
   if (document.fonts) await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]);
   showMenu(); if (S.demo) enterMode('rps');
@@ -277,4 +291,4 @@ async function boot() {
   if (flags.fps) $('fps').classList.remove('hidden');
   ads.init().catch(() => {});
 }
-boot().catch((e) => { console.error(e); ui.fatal('載入失敗 Failed to start: ' + e.message); });
+boot().catch((e) => { console.error(e); ui.fatal(t('fatal') + ': ' + e.message); });
