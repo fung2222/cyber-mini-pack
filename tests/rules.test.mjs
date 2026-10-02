@@ -1,0 +1,14 @@
+import { rpsResult, rpsAI, RPS, xoWinner, bestMove, xoAI, reactAverage, reactTier, counter, beats } from '../js/rules.js';
+import assert from 'node:assert/strict';
+let n = 0; const t = (name, fn) => { fn(); n++; console.log('ok -', name); };
+let s = 3; const rng = () => (s = (s * 16807) % 2147483647) / 2147483647;
+t('rps results', () => { assert.equal(rpsResult('rock', 'scissors'), 1); assert.equal(rpsResult('rock', 'paper'), -1); assert.equal(rpsResult('paper', 'paper'), 0); assert.equal(beats[counter('rock')], 'rock'); });
+t('hunter exploits a repeating player', () => { const h = []; let wins = 0; for (let i = 0; i < 60; i++) { const p = 'rock'; const a = rpsAI('hunter', h, rng); const r = rpsResult(p, a); h.push({ p, a, r }); if (i >= 10 && r < 0) wins++; } assert.ok(wins > 30, 'hunter wins ' + wins); });
+t('oracle beats a cycling player', () => { const h = []; let ai = 0; for (let i = 0; i < 90; i++) { const p = RPS[i % 3]; const a = rpsAI('oracle', h, rng); const r = rpsResult(p, a); h.push({ p, a, r }); if (i > 20 && r < 0) ai++; } assert.ok(ai > 25, 'oracle wins ' + ai); });
+t('rando is valid', () => { for (let i = 0; i < 30; i++) assert.ok(RPS.includes(rpsAI('rando', [], rng))); });
+t('xo winner + draw', () => { assert.deepEqual(xoWinner(['X', 'X', 'X', null, null, null, null, null, null]).line, [0, 1, 2]); assert.equal(xoWinner(['X', 'O', 'X', 'X', 'O', 'O', 'O', 'X', 'X']).w, 'draw'); assert.equal(xoWinner(Array(9).fill(null)), null); });
+t('minimax blocks and wins', () => { assert.equal(bestMove(['X', 'X', null, 'O', null, null, null, null, null], 'O', rng), 2); assert.equal(bestMove(['O', 'O', null, 'X', 'X', null, null, null, null], 'O', rng), 2); });
+t('core never loses vs random', () => { for (let g = 0; g < 40; g++) { const b = Array(9).fill(null); let turn = g % 2 ? 'X' : 'O'; let r; while (!(r = xoWinner(b))) { const i = turn === 'O' ? xoAI('core', b, 'O', rng) : b.map((v, k) => v ? -1 : k).filter(k => k >= 0)[Math.floor(rng() * b.filter(v => !v).length)]; b[i] = turn; turn = turn === 'X' ? 'O' : 'X'; } assert.notEqual(r.w, 'X'); } });
+t('rookie is beatable', () => { let pw = 0; for (let g = 0; g < 40; g++) { const b = Array(9).fill(null); let turn = 'X'; let r; while (!(r = xoWinner(b))) { const i = turn === 'O' ? xoAI('rookie', b, 'O', rng) : bestMove(b, 'X', rng); b[i] = turn; turn = turn === 'X' ? 'O' : 'X'; } if (r.w === 'X') pw++; } assert.ok(pw > 15, 'player wins ' + pw); });
+t('reaction helpers', () => { assert.equal(reactAverage([200, -1, 300]), 250); assert.equal(reactAverage([-1]), 0); assert.equal(reactTier(170)[1], '神經超頻'); assert.equal(reactTier(5000)[2], 'NEEDS COFFEE'); });
+console.log(`ALL PASSED (${n})`);
