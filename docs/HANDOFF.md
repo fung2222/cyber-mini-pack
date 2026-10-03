@@ -29,7 +29,7 @@ js/arena.js      platform, sigils (rock/paper/scissors original geometry), XO gr
 js/audio.js      MiniAudio (cyber-kit SynthAudio, 'chill' music)
 js/strings.js    zh-HK / en strings
 js/main.js       state machine, the three modes, result screen, ads hooks, demo, input, camera framing
-vendor/cyber-kit cyber-kit v0.2.1
+vendor/cyber-kit cyber-kit v0.3.0
 tests/           rules.test.mjs, smoke.py
 ```
 Test hook: `window.__mini` (state, mode, rps, xo, react, `api.enter/rpsPick/xoHuman/reactTap/cellScreen`).
@@ -50,3 +50,7 @@ As DATA FUSE (Capacitor 8 + `@capacitor-community/admob` v8; app id suggestion `
 ## 7. Known issues / ideas
 - Headless SwiftShader ≈ 3 FPS so reaction times in tests are inflated; on phones timing is frame-accurate (±16 ms).
 - Ideas: 2-player pass-and-play for RPS/XO, daily reaction leaderboard, more RPS personalities.
+
+## Audio loudness + glow (cyber-kit v0.3.0, 2026-10-03)
+- Audio: kit loudness model (music ≈ −20 LUFS integrated, median SFX ≈ music level). This game: music 'chill', sfxTrimDb -2.6 in `js/audio.js`. Re-measure after changing sounds: `python3 ../cyber-kit/tests/loudness.py http://127.0.0.1:18940 <dir>:<AudioClass> --kit /cyber-kit` (see kit docs/API.md "Loudness"). Keep music −20 ± 1 LUFS and SFX/BGM 0 ± 2 dB.
+- Glow: `createStage` values are the HIGH look; default is LOW (crisp). Shared pref `localStorage cyber.glow`, `?glow=low|high`. Pause screen has a GLOW: LOW/HIGH button (`ui.glowToggle(stage)`).
