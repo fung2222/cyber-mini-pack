@@ -70,4 +70,7 @@
 }
 #screen-start .title { white-space: nowrap; font-size: clamp(40px, 6.2vw, 80px); }
 
-/* hub return */ #btn-arcade-menu { margin-top: 10px; animation: none; }
+/* hub return */ #btn-arcade-menu { margin-top: 0; animation: none; }
+
+.menu-home .mode-list { margin: 0; width: 100%; }
+.menu-home .mode-card { max-width: 100%; }
