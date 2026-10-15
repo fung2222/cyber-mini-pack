@@ -69,3 +69,5 @@
   .demo-tag { top: auto !important; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 8px) !important; }
 }
 #screen-start .title { white-space: nowrap; font-size: clamp(40px, 6.2vw, 80px); }
+
+/* hub return */ #btn-arcade-menu { margin-top: 10px; animation: none; }

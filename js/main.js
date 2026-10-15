@@ -1,6 +1,6 @@
 // CYBER MINI PACK — one app, three modes: 包剪揼 (RPS AI ladder), 過三關 (XO AI ladder), 神經反射 (reaction test).
 import * as THREE from 'three';
-import { i18n, t, flags, createStore, createStage, ThemeController, U, Particles, Shockwaves, FxState, NeonCity, createInput, CyberUI, Platform, createAds } from 'cyber-kit';
+import { i18n, t, flags, createStore, createStage, ThemeController, U, Particles, Shockwaves, FxState, NeonCity, createInput, CyberUI, Platform, createAds, readHub, returnToHub, shouldShowArcadeMenu} from 'cyber-kit';
 import { GAME_ID, RPS, rpsResult, rpsAI, xoWinner, xoAI, REACT_TRIES, REACT_DELAY, REACT_TIERS, reactTier, reactAverage, rpsOpponent, xoOpponent, reactTarget, isMilestone } from './rules.js';
 import './strings.js';
 import { Arena, PLAT_Y } from './arena.js';
@@ -251,6 +251,10 @@ $('scene').addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse
 document.querySelectorAll('.mode-card').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); enterMode(b.dataset.mode); b.blur(); }));
 document.querySelectorAll('.rps-btn').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); if (!S.demo) rpsPick(b.dataset.move); b.blur(); }));
 ui.on('btn-back', () => { audio.back(); showMenu(); }); ui.on('btn-mute', () => { audio.init(); ui.setMuted(audio.toggleMute()); });
+const __hub = readHub();
+if (shouldShowArcadeMenu(__hub)) { const b = document.getElementById('btn-arcade-menu'); if (b) b.classList.remove('hidden'); }
+ui.on('btn-arcade-menu', () => { try { audio.back(); } catch {} returnToHub({ gameId: 'cyber-mini-pack', openStore: false }); });
+
 ui.on('btn-undo', xoUndo); ui.on('btn-resume', resume); ui.on('btn-quit', showMenu);
 ui.on('btn-res-main', resultMain); ui.on('btn-res-modes', resultModes); ui.on('btn-res-reward', resultReward);
 Platform.onBack(() => { if (ui.closeModal()) return true; if (S.state === 'play') { pause(); return true; } if (S.state === 'paused') { resume(); return true; } if (S.state === 'result') { resultModes(); return true; } return false; });
