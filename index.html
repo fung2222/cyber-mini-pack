@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#05010f">
-<meta name="description" content="賽博小遊戲 CYBER MINI PACK — 包剪揼、過三關、神經反射三合一無盡挑戰。Rock-paper-scissors, tic-tac-toe and a reaction test as endless 3D cyberpunk challenges.">
+<meta name="description" content="賽博小遊戲 CYBER MINI PACK — 包剪揼、過三關、神經反射三合一無盡挑戰 · Fake Tell · 關卡修飾 · Go/No-Go。Endless 3D cyberpunk trio with Fake Tell, stage mods and Go/No-Go.">
 <title data-i18n="doc.title">CYBER MINI PACK</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%2305010f%22/%3E%3Ccircle cx=%229%22 cy=%2210%22 r=%225%22 fill=%22none%22 stroke=%22%2300e5ff%22 stroke-width=%222%22/%3E%3Cpath d=%22M18 5l8 8M26 5l-8 8%22 stroke=%22%23ff2bd6%22 stroke-width=%222.4%22/%3E%3Ccircle cx=%2216%22 cy=%2223%22 r=%225%22 fill=%22%233bff8a%22/%3E%3C/svg%3E">
-<link rel="stylesheet" href="./vendor/cyber-kit/ui/hud.css?v=0.3.7">
-<link rel="stylesheet" href="./css/game.css?v=0.3.7">
+<link rel="stylesheet" href="./vendor/cyber-kit/ui/hud.css?v=0.4.0">
+<link rel="stylesheet" href="./css/game.css?v=0.4.0">
 <script type="importmap">
 {
   "imports": {
@@ -33,13 +33,13 @@
   <div class="hud-panel hud-right">
     <div class="stat"><div class="label" id="hud-stat-label"></div><div class="value big" id="hud-stat">0</div></div>
   </div>
-  <div class="mp-center"><div class="mp-score" id="mp-score"></div><div class="mp-msg" id="mp-msg"></div></div>
+  <div class="mp-center"><div class="mp-score" id="mp-score"></div><div class="mp-msg" id="mp-msg"></div><div class="mod-chip hidden" id="hud-mod"><b id="hud-mod-name"></b><small id="hud-mod-sub"></small></div></div>
   <div id="rps-bar" class="rps-bar">
     <button class="rps-btn" data-move="rock" data-i18n-attr="aria-label:rock"><svg viewBox="0 0 48 48"><path d="M14 20l6-8 10 1 6 9-3 12-12 3-8-7z" fill="none" stroke-width="3" stroke-linejoin="round"/></svg><b data-i18n="rock"></b><small data-i18n="rockS"></small></button>
     <button class="rps-btn" data-move="paper" data-i18n-attr="aria-label:paper"><svg viewBox="0 0 48 48"><path d="M13 8h16l7 7v25H13z" fill="none" stroke-width="3" stroke-linejoin="round"/><path d="M18 20h13M18 26h13M18 32h9" stroke-width="2.4"/></svg><b data-i18n="paper"></b><small data-i18n="paperS"></small></button>
     <button class="rps-btn" data-move="scissors" data-i18n-attr="aria-label:scissors"><svg viewBox="0 0 48 48"><circle cx="14" cy="35" r="5" fill="none" stroke-width="3"/><circle cx="34" cy="35" r="5" fill="none" stroke-width="3"/><path d="M17 31L34 8M31 31L14 8" stroke-width="3" stroke-linecap="round"/></svg><b data-i18n="scissors"></b><small data-i18n="scissorsS"></small></button>
   </div>
-  <button id="btn-undo" class="df-undo mp-undo hidden" data-i18n-attr="aria-label:undo"><svg viewBox="0 0 24 24"><path d="M9 7L4 12l5 5" fill="none" stroke-width="2.4"/><path d="M4 12h10a6 6 0 0 1 0 12h-2" fill="none" stroke-width="2.4" transform="translate(0,-6)"/></svg><span class="df-undo-txt"><b data-i18n="undo"></b><small data-i18n="undoS"></small></span><span class="df-badge" id="undo-badge">1</span></button>
+  <button id="btn-undo" class="df-undo mp-undo hidden" data-i18n-attr="aria-label:undo"><svg viewBox="0 0 24 24"><path d="M9 7L4 12l5 5" fill="none" stroke-width="2.4"/><path d="M4 12h10a6 6 0 0 1 0 12h-2" fill="none" stroke-width="2.4" transform="translate(0,-6)"/></svg><span class="df-undo-txt"><b data-i18n="undo"></b><small id="undo-sub" data-i18n="undoS"></small></span><span class="df-badge" id="undo-badge">1</span><span class="oc-meter"><i id="oc-fill"></i></span></button>
   <div class="hud-buttons">
     <button id="btn-back" class="icon-btn" data-i18n-attr="title:backTip,aria-label:backTip"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke-width="2.6"/></svg></button>
     <button id="btn-mute" class="icon-btn" data-i18n-attr="title:muteTip,aria-label:muteTip">

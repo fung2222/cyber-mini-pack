@@ -20,7 +20,6 @@ export function rpsAI(id, history, rng = Math.random) {
   const rnd = () => RPS[Math.floor(rng() * 3)];
   if (id === 'rando' || history.length < 2) return rnd();
   if (id === 'hunter') {
-    // order-1 Markov on the player's moves: what does the player play after their last move?
     const last = history[history.length - 1].p; const cnt = { rock: 0, paper: 0, scissors: 0 };
     for (let i = 1; i < history.length; i++) if (history[i - 1].p === last) cnt[history[i].p]++;
     const total = cnt.rock + cnt.paper + cnt.scissors;
@@ -28,7 +27,6 @@ export function rpsAI(id, history, rng = Math.random) {
     const pred = RPS.reduce((a, b) => cnt[a] >= cnt[b] ? a : b);
     return counter(pred);
   }
-  // oracle: order-2 then order-1 pattern memory, then win-stay / lose-shift detection, then recency-weighted frequency
   const P = history.map(x => x.p), L = P.length;
   for (const k of [2, 1]) {
     if (L <= k) continue;
@@ -42,6 +40,24 @@ export function rpsAI(id, history, rng = Math.random) {
   if (n >= 2) { const stay = stayRate / n; if (stay > 0.6) return counter(h.p); if (stay < 0.25) return counter(h.r < 0 ? counter(h.a) : beats[h.p]); }
   const w = { rock: 0, paper: 0, scissors: 0 }; history.forEach((x, i) => w[x.p] += 1 + i * 0.3);
   return counter(RPS.reduce((a, b) => w[a] >= w[b] ? a : b));
+}
+
+/**
+ * Fake Tell: map AI move → shown gesture.
+ * rando = truthful (tell === aiMove); hunter = inverted (tell === counter(aiMove));
+ * oracle / other = random (may accidentally match).
+ */
+export function rpsTell(id, aiMove, rng = Math.random) {
+  if (id === 'rando') return aiMove;
+  if (id === 'hunter') return counter(aiMove);
+  return RPS[Math.floor(rng() * 3)];
+}
+
+/** Corrupt player move once when glitch is armed. Returns { move, glitched }. */
+export function rpsGlitchMove(move, armed, rng = Math.random) {
+  if (!armed) return { move, glitched: false };
+  const others = RPS.filter(m => m !== move);
+  return { move: others[Math.floor(rng() * others.length)], glitched: true };
 }
 
 // ---------------------------------------------------------------- 過三關 tic-tac-toe
@@ -77,36 +93,104 @@ export function xoAI(id, b, me, rng = Math.random, blunder = 0) {
   const win = findWin(b, me); if (win >= 0) return win;
   if (id === 'rookie') return rng() < 0.5 && !b[4] ? 4 : rnd();
   const block = findWin(b, other); if (block >= 0) return block;
-  return rng() < 0.65 ? bestMove(b, me, rng) : rnd();   // guard: decent but beatable
+  return rng() < 0.65 ? bestMove(b, me, rng) : rnd();
+}
+
+/** Rotate board indices 90° clockwise (for WARP mod). */
+export function xoWarpIndex(i) {
+  const r = Math.floor(i / 3), c = i % 3;
+  return c * 3 + (2 - r);
+}
+export function xoWarpBoard(b) {
+  const n = Array(9).fill(null);
+  for (let i = 0; i < 9; i++) n[xoWarpIndex(i)] = b[i];
+  return n;
+}
+
+/** Pick a hazard cell among empties (prefer non-center when possible). */
+export function xoPickHazard(board, rng = Math.random) {
+  const empty = board.map((v, i) => v ? -1 : i).filter(i => i >= 0);
+  if (!empty.length) return -1;
+  const nonCenter = empty.filter(i => i !== 4);
+  const pool = nonCenter.length ? nonCenter : empty;
+  return pool[Math.floor(rng() * pool.length)];
+}
+
+/** Adjacent cells (orthogonal + diagonal) for virus spread. */
+export function xoNeighbors(i) {
+  const r = Math.floor(i / 3), c = i % 3, out = [];
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    if (!dr && !dc) continue;
+    const nr = r + dr, nc = c + dc;
+    if (nr >= 0 && nr < 3 && nc >= 0 && nc < 3) out.push(nr * 3 + nc);
+  }
+  return out;
+}
+
+/** After virus countdown expires: infect one random empty neighbour as 'O'. Returns cell or -1. */
+export function xoVirusSpread(board, virusCell, rng = Math.random) {
+  const cand = xoNeighbors(virusCell).filter(i => !board[i]);
+  if (!cand.length) return -1;
+  return cand[Math.floor(rng() * cand.length)];
+}
+
+/** Should endless AI attempt a virus placement this turn? */
+export function xoShouldVirus(endless, board, rng = Math.random, chance = 0.22) {
+  if (!endless) return false;
+  const empty = board.filter(v => !v).length;
+  return empty >= 3 && rng() < chance;
 }
 
 // ---------------------------------------------------------------- 神經反射 reaction test
 export const REACT_TRIES = 5;
-export const REACT_DELAY = [1.4, 4.2];        // random wait before GO (s)
+export const REACT_DELAY = [1.4, 4.2];
 export const REACT_TIERS = [
   [180, '神經超頻', 'OVERCLOCKED'], [230, '賽博反射', 'CYBER REFLEX'], [280, '快過的士', 'FASTER THAN A TAXI'],
   [350, '正常人類', 'HUMAN'], [9999, '要飲杯咖啡', 'NEEDS COFFEE'],
 ];
 export const reactTier = (ms) => REACT_TIERS.find(t => ms <= t[0]);
-/** average of valid tries (false starts excluded) */
 export const reactAverage = (tries) => { const v = tries.filter(t => t > 0); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0; };
+
+/**
+ * Per-try cue plan for polish twists.
+ * - nogo: optional magenta decoy before real GO
+ * - lanes: 1 or 3 active lanes (which lane goes green)
+ * - charge: hold during wait, release on GO
+ */
+export function reactPlan(round, rng = Math.random, {
+  nogoChance = 0.30, laneFrom = 2, chargeOdd = true,
+} = {}) {
+  const lanes = round >= laneFrom ? 3 : 1;
+  const lane = lanes === 1 ? 1 : Math.floor(rng() * 3); // 0 left, 1 mid, 2 right; single = mid
+  const charge = chargeOdd && (round % 2 === 1);
+  const nogo = rng() < nogoChance;
+  return { lanes, lane, charge, nogo };
+}
+
+export function reactLaneFromX(nx, lanes) {
+  // nx in [-1, 1] NDC or 0..1 fraction — accept 0..1 screen fraction
+  if (lanes <= 1) return 1;
+  if (nx < 1 / 3) return 0;
+  if (nx < 2 / 3) return 1;
+  return 2;
+}
 
 // ---------------------------------------------------------------- endless (beyond the authored ladders)
 const lerpCap = (n, a, b, tau) => a + (b - a) * (1 - Math.exp(-Math.max(0, n) / tau));
 const RPS_TAGS = [['霓虹', 'NEON'], ['量子', 'QUANTUM'], ['鉻鋼', 'CHROME'], ['幻象', 'PHANTOM'], ['等離子', 'PLASMA'], ['虛空', 'VOID']];
-/** RPS opponent for ladder index i (unbounded). Endless rivals alternate hunter/oracle brains and need more wins (capped at best of 7). */
 export function rpsOpponent(i) {
   if (i < RPS_OPPONENTS.length) return { ...RPS_OPPONENTS[i], need: RPS_WINS_NEEDED, idx: i };
   const e = i - RPS_OPPONENTS.length, base = RPS_OPPONENTS[1 + (e % 2)], tag = RPS_TAGS[Math.floor(e / 2) % RPS_TAGS.length];
   return { ...base, idx: i, endless: true, zh: `${tag[0]}${base.zh} #${e + 1}`, en: `${tag[1]} ${base.en} #${e + 1}`, need: Math.min(4, 2 + Math.floor(e / 4)) };
 }
-/** XO opponent for stage index i (unbounded). Endless stages = perfect AI that blunders less and less (capped at 4 %); a draw clears. */
 export function xoOpponent(i) {
   if (i < XO_OPPONENTS.length) return { ...XO_OPPONENTS[i], idx: i };
   const e = i - XO_OPPONENTS.length;
   return { id: 'endless', idx: i, endless: true, drawClears: true, zh: `超頻核心 Lv.${e + 1}`, en: `OVERCLOCK CORE Lv.${e + 1}`,
     desc: '打和過關 · 贏有額外分', descEn: 'Draw clears · wins score extra', blunder: lerpCap(e, 0.22, 0.04, 8) };
 }
-/** reaction gauntlet: target average (ms) for round r (0-based) — tightens from 450 ms and saturates at 300 ms */
 export const reactTarget = (r) => Math.round(lerpCap(r, 450, 300, 6));
 export const isMilestone = (n, every = 5) => n > 0 && n % every === 0;
+
+// re-export mod helper for tests that import rules only
+export { xoModifier } from './config.js';

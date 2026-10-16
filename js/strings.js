@@ -1,4 +1,4 @@
-// CYBER MINI PACK string table [zh-HK, en]
+// CYBER MINI PACK string table [zh-HK, en] — includes Slice B+ twist copy
 import { i18n } from 'cyber-kit';
 i18n.add({
   'doc.title': ['賽博小遊戲 CYBER MINI PACK · 包剪揼 · 過三關 · 神經反射', 'CYBER MINI PACK · Rock Paper Scissors · Tic-Tac-Toe · Reaction'],
@@ -10,7 +10,7 @@ i18n.add({
   'mc.react': ['最佳平均 {ms} ms · 最高第 {r} 輪', 'Best avg {ms} ms · best round {r}'], 'mc.reactNew': ['綠燈一著即撳 · 一輪比一輪快', 'Tap on green · every round gets faster'],
   privacy: ['私隱政策', 'Privacy policy'], backTip: ['返回選單 (Esc)', 'Mode select (Esc)'], muteTip: ['靜音 (M)', 'Mute (M)'],
   rock: ['揼', 'ROCK'], paper: ['包', 'PAPER'], scissors: ['剪', 'SCISSORS'], rockS: ['ROCK · 1', '1'], paperS: ['PAPER · 2', '2'], scissorsS: ['SCISSORS · 3', '3'],
-  undo: ['悔棋', 'UNDO'], undoS: ['UNDO · Z', 'Z'],
+  undo: ['悔棋', 'UNDO'], undoS: ['UNDO · Z', 'Z'], undoOcS: ['長按超頻', 'HOLD = OVERCLOCK'],
   paused: ['已暫停', 'PAUSED'], pausedS: ['PAUSED', '已暫停'], resume: ['繼續', 'RESUME'], resumeS: ['RESUME · P', 'P'], modes: ['返回選單', 'MODE SELECT'], modesS: ['MODE SELECT', 'ESC'],
   keepStreak: ['保住連勝', 'KEEP STREAK'], keepStreakN: ['保住 {n} 連勝', 'KEEP {n}-STREAK'], viaAd: ['睇段廣告', 'WATCH AD'], free: ['免費', 'FREE'],
   vs: ['VS {name}', 'VS {name}'], streak: ['連勝', 'STREAK'], stage: ['關卡', 'STAGE'], best: ['最佳', 'BEST'], round: ['輪數', 'ROUND'],
@@ -31,4 +31,23 @@ i18n.add({
   nextRound: ['下一輪', 'NEXT ROUND'], tryAgain: ['再測一次', 'TRY AGAIN'], needCoffee: ['要再試過', 'TRY AGAIN'], gauntletOver: ['挑戰結束', 'GAUNTLET OVER'],
   'tier.0': ['神經超頻', 'OVERCLOCKED'], 'tier.1': ['賽博反射', 'CYBER REFLEX'], 'tier.2': ['快過的士', 'FASTER THAN A TAXI'], 'tier.3': ['正常人類', 'HUMAN'], 'tier.4': ['要飲杯咖啡', 'NEEDS COFFEE'],
   streakSaved: ['連勝保住咗：{n}', 'Streak saved: {n}'], fatal: ['載入失敗', 'Failed to start'],
+
+  // ---- Slice B+ twists
+  tell: ['訊號閃過…', 'TELL FLASH…'], tellHint: ['留意對手頭上嘅假訊號', 'Watch the fake tell above their head'],
+  wagerLocked: ['已鎖定賭注！', 'WAGER LOCKED!'], wagerWin: ['賭注勝出！', 'WAGER PAYS!'], wagerLose: ['賭注輸硬…', 'WAGER BURNED…'],
+  glitchHand: ['故障手！變成 {m}', 'GLITCH HAND! → {m}'], perfectMatch: ['完美對局！', 'PERFECT MATCH!'],
+  wagers: ['賭注勝', 'Wagers won'],
+
+  'mod.fog': ['迷霧格', 'FOG GRID'], 'mod.fogS': ['淨係睇到游標格', 'Only the hovered cell is clear'],
+  'mod.warp': ['空間扭曲', 'WARP'], 'mod.warpS': ['每回合棋盤轉 90°', 'Board rotates 90° each full turn'],
+  'mod.hazard': ['危格', 'HAZARD'], 'mod.hazardS': ['一格鎖死唔畀落', 'One cell is locked'],
+  'mod.echo': ['殘影', 'ECHO'], 'mod.echoS': ['可蓋寫上一步一次', 'Overwrite your last cell once'],
+  virusPlaced: ['病毒植入！', 'VIRUS PLANTED!'], virusSpread: ['病毒擴散！', 'VIRUS SPREAD!'], virusCleared: ['病毒清除', 'VIRUS CLEARED'],
+  ocUndo: ['超頻悔棋！', 'OVERCLOCK UNDO!'], ocArmed: ['下步 AI 完美演算', 'Next AI move is perfect'],
+  hazardCell: ['危格已鎖定', 'Hazard locked'],
+
+  nogo: ['假訊號！唔好撳', 'DECOY! DON\'T TAP'], nogoClear: ['假訊號過…', 'Decoy passed…'],
+  laneGo: ['撳亮燈嗰邊！', 'TAP THE LIT LANE!'], wrongLane: ['錯跑道！', 'WRONG LANE!'],
+  chargeHold: ['按住…綠燈鬆手', 'HOLD… RELEASE ON GREEN'], chargeGo: ['鬆手！', 'RELEASE!'],
+  chargeFoul: ['未綠就鬆！', 'RELEASED TOO EARLY!'],
 });

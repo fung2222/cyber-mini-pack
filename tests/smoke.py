@@ -89,11 +89,17 @@ def run(p, name, w, h, mobile):
     # ---- Reaction
     tap('#mode-react'); pg.wait_for_timeout(300)
     check(pg.evaluate('__mini.mode') == 'react', f'{name}: reaction mode entered')
-    wait_for(pg, "__mini.react.phase==='wait'")
+    wait_for(pg, "__mini.react.phase==='wait' || __mini.react.phase==='nogo'")
     cx, cy = w // 2, int(h * 0.45)
     def press():
         if mobile: pg.touchscreen.tap(cx, cy)
         else: pg.mouse.click(cx, cy)
+    def react_hit():
+        plan = pg.evaluate('__mini.react.plan || {}')
+        if plan.get('lanes', 1) > 1:
+            pg.evaluate(f"__mini.api.reactTap({plan.get('lane', 1)})")
+        else:
+            press()
     press()  # deliberate false start
     check(wait_for(pg, '__mini.react.tries[0]===-1', 6), f'{name}: false start detected')
     shot = False
@@ -101,8 +107,8 @@ def run(p, name, w, h, mobile):
         if not wait_for(pg, "__mini.react.phase==='go' || __mini.state!=='play'", 40): break
         if pg.evaluate('__mini.state') != 'play': break
         if not shot: pg.screenshot(path=f'{OUT}/{name}-react.png'); shot = True
-        n = pg.evaluate('__mini.react.tries.length'); press()
-        wait_for(pg, f'__mini.react.tries.length>{n}', 6)
+        n = pg.evaluate('__mini.react.tries.length'); react_hit()
+        wait_for(pg, f'__mini.react.tries.length>{n} || __mini.state!=="play"', 8)
     tries = pg.evaluate('__mini.react.tries')
     check(len([t for t in tries if t > 0]) >= 3, f'{name}: timed taps recorded {tries}')
     wait_for(pg, "__mini.state==='result'")

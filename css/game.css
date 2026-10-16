@@ -74,3 +74,23 @@
 
 .menu-home .mode-list { margin: 0; width: 100%; }
 .menu-home .mode-card { max-width: 100%; }
+
+/* Slice B+ */
+.mod-chip { margin-top: 8px; display: inline-flex; flex-direction: column; align-items: center; padding: 6px 14px; pointer-events: none;
+  background: color-mix(in srgb, var(--c2) 18%, rgba(10,4,30,.7)); border: 1px solid color-mix(in srgb, var(--c2) 65%, transparent);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+.mod-chip.hidden { display: none; }
+.mod-chip b { font-family: var(--font-zh); font-size: 14px; letter-spacing: 2px; color: #fff; text-shadow: 0 0 8px var(--c2); }
+.mod-chip small { font-family: 'Orbitron', sans-serif; font-size: 8px; letter-spacing: 2px; color: var(--c2); }
+.mod-chip.fog { border-color: rgba(0,229,255,.7); }
+.mod-chip.warp { border-color: rgba(166,107,255,.7); }
+.mod-chip.hazard { border-color: rgba(255,59,92,.7); }
+.mod-chip.echo { border-color: rgba(59,255,138,.7); }
+.oc-meter { position: absolute; left: 8px; right: 8px; bottom: 4px; height: 3px; background: rgba(255,255,255,.12); border-radius: 2px; overflow: hidden; }
+.oc-meter i { display: block; height: 100%; width: 0; background: #ffc22b; box-shadow: 0 0 8px #ffc22b; transition: width .05s linear; }
+.df-undo.charging .oc-meter i { background: #ff2bd6; box-shadow: 0 0 8px #ff2bd6; }
+.df-undo.overclock { border-color: #ffc22b; box-shadow: 0 0 16px rgba(255,194,43,.45); }
+.rps-btn.wagering { border-color: #ffc22b; box-shadow: 0 0 18px #ffc22b; }
+.rps-btn.locked { border-color: #3bff8a; box-shadow: 0 0 20px #3bff8a; }
+#mp-msg.wager { color: #ffc22b; }
+#mp-msg.glitch { color: #ff2bd6; }
