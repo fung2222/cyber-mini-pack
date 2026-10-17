@@ -588,6 +588,19 @@ function tick(dt, now) {
   city.update(now, dt, camera); frameCamera(dt, now); fx.applyPost(stage, now); ui.tick(dt); stage.render(dt);
 }
 i18n.bindToggle($('btn-lang')); i18n.bindToggle($('btn-lang2'));
+
+ui.mountHowto({
+  onOpen: () => { try { audio.click(); } catch (_) {} },
+  getContent: () => ({
+    kicker: 'CYBER MINI PACK',
+    title: t('kit.howto'),
+    sections: [
+      { heading: t('kit.rules'), body: t('help.rules') },
+      { heading: t('kit.controls'), body: t('help.controls') },
+    ],
+  }),
+});
+
 i18n.onChange(() => { refreshMenu(); hudRefresh(); });
 async function boot() {
   if (document.fonts) await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]);

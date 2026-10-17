@@ -50,4 +50,7 @@ i18n.add({
   laneGo: ['撳亮燈嗰邊！', 'TAP THE LIT LANE!'], wrongLane: ['錯跑道！', 'WRONG LANE!'],
   chargeHold: ['按住…綠燈鬆手', 'HOLD… RELEASE ON GREEN'], chargeGo: ['鬆手！', 'RELEASE!'],
   chargeFoul: ['未綠就鬆！', 'RELEASED TOO EARLY!'],
+
+  'help.rules': ['<ul><li><strong>包剪揼</strong>：三局兩勝；AI 有假訊號／長按下注／無盡故障手。</li><li><strong>過三關</strong>：你係 ✕；第 4 關起區規（迷霧／扭曲／危格／殘影）；無盡有病毒 O；長按悔棋＝超頻悔兩手。</li><li><strong>神經反射</strong>：綠燈先撳；有假訊號、三跑道、按住鬆手輪。</li></ul>', '<ul><li><strong>RPS</strong>: best of 3; Fake Tell, hold-to-wager, endless Glitch Hand.</li><li><strong>XO</strong>: you are ✕; stage mods from stage 4; Virus O on endless; hold Undo = overclock 2-ply.</li><li><strong>Reaction</strong>: tap on green; Go/No-Go decoys, tri-lane, charge-release rounds.</li></ul>'],
+  'help.controls': ['<ul><li>選模式：撳卡／<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></li><li>包剪揼：撳掣（長按＝賭注）／<kbd>1–3</kbd></li><li>過三關：撳格 · 悔棋 <kbd>Z</kbd>（長按超頻）</li><li>反射：撳畫面／Space（單數輪按住再鬆）</li><li>暫停 <kbd>P</kbd> · 靜音 <kbd>M</kbd></li></ul>', '<ul><li>Modes: tap cards / <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></li><li>RPS: buttons (hold = wager) / <kbd>1–3</kbd></li><li>XO: tap cell · Undo <kbd>Z</kbd> (hold = overclock)</li><li>Reaction: tap / Space (hold-release on odd rounds)</li><li>Pause <kbd>P</kbd> · Mute <kbd>M</kbd></li></ul>'],
 });
