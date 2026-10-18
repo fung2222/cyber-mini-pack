@@ -1,6 +1,8 @@
 // CYBER MINI PACK — RPS / XO / Reaction. Slice B+: Fake Tell + wager + glitch; XO mods + virus + OC undo; react go/no-go + lanes + charge.
 import * as THREE from 'three';
-import { i18n, t, flags, createStore, createStage, ThemeController, U, Particles, Shockwaves, FxState, NeonCity, createInput, CyberUI, Platform, createAds, readHub, returnToHub, shouldShowArcadeMenu } from 'cyber-kit';
+import { i18n, t, flags, createStore, createStage, ThemeController, U, Particles, Shockwaves, FxState, NeonCity, createInput, CyberUI, Platform, createAds, readHub, returnToHub, shouldShowArcadeMenu,
+  ViewInput, defaultView, clampView, dampView
+} from 'cyber-kit';
 import {
   GAME_ID, RPS, rpsResult, rpsAI, rpsTell, rpsGlitchMove, xoWinner, xoAI, xoWarpBoard, xoWarpIndex, xoPickHazard, xoVirusSpread, xoShouldVirus,
   REACT_TRIES, REACT_DELAY, REACT_TIERS, reactTier, reactAverage, reactPlan, reactLaneFromX,
@@ -71,8 +73,8 @@ function refreshMenu() {
   ui.setText('mc-xo', t('mc.xo', { n: Math.max(1, store.getNum('xoBest', store.getNum('xoBeaten', 0) + 1)) }));
   const rb = store.getNum('reactBest', 0); ui.setText('mc-react', rb ? t('mc.react', { ms: rb, r: store.getNum('reactBestRound', 1) }) : t('mc.reactNew'));
 }
-function showMenu() { S.timers = []; S.mode = 'attract'; arena.setMode('attract'); theme.set(1); refreshMenu(); setState('menu'); updateModChip(); audio.stopAmbient(); }
-function enterMode(m) {
+function showMenu() { resetPlayView(true); S.timers = []; S.mode = 'attract'; arena.setMode('attract'); theme.set(1); refreshMenu(); setState('menu'); updateModChip(); audio.stopAmbient(); }
+function enterMode(m) { resetPlayView(true);
   audio.init(); audio.startMusic(); audio.startAmbient(); audio.click();
   S.timers = []; S.mode = m; arena.setMode(m); theme.set(MODE_THEME[m]);
   ui.setText('hud-mode', t(MODE_KEY[m]));
@@ -555,14 +557,35 @@ S.api = { enter: enterMode, rpsPick, xoHuman, reactTap, cellScreen: (i) => stage
 
 // ================================================================ camera + loop
 const camPos = new THREE.Vector3(0, 14, 14), camLook = new THREE.Vector3(0, PLAT_Y, 0), tP = new THREE.Vector3(), tL = new THREE.Vector3();
+const pView = defaultView(), pViewC = defaultView(), VIEW_EXT = [5.5, 5.5];
+let viewPitch = 1.0;
+const inMatch = () => (S.state === 'play' || S.state === 'paused') && !S.demo;
+const gesturesOn = () => inMatch() && !ui.modalOpen;
+function resetPlayView(instant = true) { Object.assign(pView, defaultView()); if (instant) Object.assign(pViewC, defaultView()); }
+new ViewInput($('scene'), {
+  enabled: gesturesOn,
+  zoom: (f) => { pView.zoom *= f; clampView(pView, viewPitch, VIEW_EXT); },
+  twist: (d) => { pView.az += d; clampView(pView, viewPitch, VIEW_EXT); },
+  pan: (x0, y0, x1, y1) => { const k = 0.01; pView.px += (x0 - x1) * k; pView.pz += (y0 - y1) * k; clampView(pView, viewPitch, VIEW_EXT); },
+  orbit: (dAz, dEl) => { pView.az += dAz; pView.el += dEl; clampView(pView, viewPitch, VIEW_EXT); },
+}, { oneFingerOrbit: false });
+
 function frameCamera(dt, now, instant = false) {
   const aspect = stage.width / stage.height, portrait = aspect < 0.9, menu = S.state === 'menu';
+  const useView = inMatch();
+  if (menu) resetPlayView(true);
   const vfov = portrait ? 52 : 42; camera.fov = vfov + fx.fovKick * 3; camera.updateProjectionMatrix();
-  const pitch = THREE.MathUtils.degToRad(menu ? 32 : S.mode === 'xo' ? (portrait ? 64 : 56) : (portrait ? 46 : 38));
+  let pitch = THREE.MathUtils.degToRad(menu ? 32 : S.mode === 'xo' ? (portrait ? 64 : 56) : (portrait ? 46 : 38));
+  viewPitch = pitch;
   const R = 5.7, tanV = Math.tan(THREE.MathUtils.degToRad(vfov / 2)), tanH = tanV * aspect;
   let d = Math.max(R / (tanH * 0.95), (R * Math.sin(pitch) + 2.5 * Math.cos(pitch)) / (tanV * (portrait ? 0.6 : 0.8))) + R * 0.5;
   let yaw = Math.sin(now * 0.13) * 0.05, lx = 0, ly = PLAT_Y + (S.mode === 'xo' ? 0.2 : 1.2), lz = portrait && !menu ? 0.6 : 0;
   if (menu) { yaw = now * 0.12; d *= portrait ? 1.0 : 0.85; d = Math.min(d, 16.5); if (!portrait) lx = 0; ly = PLAT_Y + (portrait ? -4.2 : 1.5); }
+  if (useView) {
+    clampView(pView, viewPitch, VIEW_EXT);
+    if (!instant) dampView(pViewC, pView, Math.max(dt, 1 / 120)); else Object.assign(pViewC, pView);
+    yaw += pViewC.az; pitch = viewPitch + pViewC.el; d *= pViewC.zoom; lx += pViewC.px; lz += pViewC.pz;
+  }
   tL.set(lx, ly, lz); tP.set(Math.sin(yaw) * Math.cos(pitch) * d, Math.sin(pitch) * d, Math.cos(yaw) * Math.cos(pitch) * d).add(tL);
   if (menu && !portrait) { const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw)); tL.addScaledVector(right, -5.5); tP.addScaledVector(right, -5.5); }
   const k = instant ? 1 : 1 - Math.exp(-dt * 3); camPos.lerp(tP, k); camLook.lerp(tL, k); camera.position.copy(camPos); camera.lookAt(camLook); fx.shake(camera, now, 0.6);
