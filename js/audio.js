@@ -1,7 +1,20 @@
 // CYBER MINI PACK sounds (synthesised) — Slice B+ layers for tell / wager / virus / react cues.
 import { SynthAudio, mtof } from 'cyber-kit/audio/synth.js';
 export class MiniAudio extends SynthAudio {
-  constructor(store) { super({ store, music: 'chill', sfxTrimDb: -2.6 }); this._amb = null; }
+  constructor(store) {
+    super({ store, music: 'chill', sfxTrimDb: -2.6 });
+    // Roy's audio rule: no continuous hiss in the BGM. Keep the chill preset's
+    // tonal kick/bass/pad/arp, but remove the soft noise hats and the noise bed.
+    this.preset = { ...this.preset, hats: false };
+    this._amb = null;
+  }
+  // Suppress SynthAudio's noise-based BGM layers (snare/hats) while keeping
+  // all tonal instruments. SFX still use noiseHit normally.
+  playStep(step, time, s16) {
+    const n = this.noiseHit;
+    this.noiseHit = () => {};
+    try { super.playStep(step, time, s16); } finally { this.noiseHit = n; }
+  }
   beat(i) { this.osc({ type: 'square', f: mtof(64 + i * 5), dur: 0.08, vol: 0.06, lp: 3000, send: 0.2 }); this.noiseHit({ dur: 0.05, vol: 0.05, f: 4000 }); }
   reveal() { this.noiseHit({ dur: 0.2, vol: 0.08, type: 'bandpass', f: 600, f2: 3000, q: 1.5, a: 0.01 }); this.osc({ type: 'sine', f: 120, f2: 60, dur: 0.25, vol: 0.2 }); }
   win() { [0, 4, 7, 12].forEach((n, i) => this.osc({ type: 'triangle', f: mtof(72 + n), t: i * 0.07, dur: 0.3, vol: 0.08, send: 0.4 })); }
@@ -29,23 +42,8 @@ export class MiniAudio extends SynthAudio {
   chargeArmed() { this.osc({ type: 'sine', f: 220, f2: 440, dur: 0.2, vol: 0.04, send: 0.3 }); }
   reactFast() { this.go(); [0, 5].forEach((n, i) => this.osc({ type: 'triangle', f: mtof(84 + n), t: 0.05 + i * 0.04, dur: 0.15, vol: 0.045 })); }
 
-  startAmbient() {
-    if (this._amb || this.muted) return;
-    try {
-      const ctx = this.ctx; if (!ctx) return;
-      const n = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-      const d = n.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.15;
-      const src = ctx.createBufferSource(); src.buffer = n; src.loop = true;
-      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 400; f.Q.value = 0.6;
-      const g = ctx.createGain(); g.gain.value = 0.012;
-      src.connect(f); f.connect(g); g.connect(this.master || ctx.destination);
-      src.start(); this._amb = { src, g };
-    } catch (e) { /* ignore */ }
-  }
-  stopAmbient() {
-    if (!this._amb) return;
-    try { this._amb.src.stop(); } catch (e) { /* ignore */ }
-    this._amb = null;
-  }
+  // The chill BGM is fully tonal: no continuous hiss bed. Kept as no-ops so
+  // existing boot/gesture callers stay valid.
+  startAmbient() {}
+  stopAmbient() {}
 }

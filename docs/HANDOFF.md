@@ -23,7 +23,7 @@ Enhancement pass parallel to neon-recall polish. Keeps endless + hub Arcade Menu
 | **LOCK-IN WAGER** | Hold a move button ~350 ms to lock a wager; win that throw → wager toast + aura; lose → burn toast. Match stats show wager wins. |
 | **GLITCH HAND** | Endless (and milestone) rivals arm **one** corrupt throw: after you pick, your move randomly becomes another with glitch SFX/banner. |
 
-Feel: tiered shatter by streak, streak aura, head tilt on tell, perfect-match result title when you take the match  without dropping a point, ambient noise bed.
+Feel: tiered shatter by streak, streak aura, head tilt on tell, perfect-match result title when you take the match without dropping a point, fully tonal BGM (no ambient noise bed).
 
 #### XO
 | Twist | Behaviour |
@@ -58,27 +58,30 @@ js/audio.js      MiniAudio (+ tell/wager/glitch/virus/nogo/lane/charge/ambient)
 js/strings.js    zh-HK / en (incl. mod.* / twist copy)
 js/main.js       state machine + twists + input
 vendor/cyber-kit v0.3.19
-tests/           rules.test.mjs (18), layout.py, smoke.py
+tests/           rules.test.mjs (18), layout.py, virus-turns.py, react-round.py, smoke.py
 ```
-Test hook: `window.__mini` (`api.enter/rpsPick/rpsSetWager/xoHuman/xoUndo/reactTap/cellScreen`).
+Test hook: `window.__mini` (`api.enter/rpsPick/rpsSetWager/xoHuman/xoUndo/reactTap/reactEnd/xoAITurn/xoDoVirusSpread/cellScreen`).
 
 ## 4. Tests
-`node tests/rules.test.mjs` (18 tests incl. tell/glitch/mods/warp/virus/reactPlan) · `python tests/layout.py [url]` — 390px layout guard: equal mode-card heights, RPS labels fit their buttons, zero console errors · `python tests/smoke.py` — mobile + desktop: modes, RPS, XO+undo, reaction foul+taps, pause, i18n, endless rivals/stages/rounds, demo, zero console errors.
-Last run 2026-11-02: rules 18/18, layout PASS (mode cards 71px, SCISSORS 93px inside 96px button). Full smoke remains the long run.
+`node tests/rules.test.mjs` (18 tests incl. tell/glitch/mods/warp/virus/reactPlan) · `python tests/layout.py [url]` — 390px layout guard: equal mode-card heights, RPS labels fit their buttons, zero console errors · `python tests/virus-turns.py [url]` — virus spread consumes the AI turn, no second O, undo-safe · `python tests/react-round.py [url]` — result ROUND REACHED is the current round · `python tests/smoke.py` — mobile + desktop: modes, RPS, XO+undo, reaction foul+taps, pause, i18n, endless rivals/stages/rounds, demo, zero console errors.
+Last run 2026-11-03: rules 18/18, layout PASS (mode cards 71px, SCISSORS 93px inside 96px button), virus-turns PASS, react-round PASS.
 
-## 5. Android packaging
+## 5. Deep pass 2026-11-03
+See `docs/DEEP-AUDIT-2026-11-03.md`: removed BGM hiss/noise hats/snare, fixed virus double-move + undo-stale spread, fixed reaction ROUND REACHED.
+
+## 6. Android packaging
 As DATA FUSE (Capacitor 8 + `@capacitor-community/admob` v8; app id suggestion `hk.fung2222.cyberminipack`).
 
-## 6. Ad placements
+## 7. Ad placements
 | Placement | Type | Code | Rule |
 |---|---|---|---|
 | `match` | interstitial | `resultMain()` / `resultModes()` → `ads.naturalBreak('match')` | after result button; cooldown 180 s, every 3rd break, 150 s grace |
 | `rps-streak` | rewarded | `resultReward()` | opt-in after RPS loss that ended a streak |
 | `xo-undo` | rewarded | `xoUndo()` | opt-in once free undo is used |
 
-## 7. Known issues / ideas
+## 8. Known issues / ideas
 - Headless SwiftShader ≈ 3 FPS so reaction times in tests are inflated; on phones timing is frame-accurate (±16 ms).
 - Ideas: 2-player pass-and-play, daily reaction seed, more RPS personalities.
 
 ## Audio loudness + glow (cyber-kit v0.3.7)
-- Music 'chill', sfxTrimDb -2.6. Glow LOW default + pause GLOW toggle (`cyber.glow`).
+- Music 'chill', fully tonal (no ambient noise bed, no noise hats/snare), sfxTrimDb -2.6. Glow LOW default + pause GLOW toggle (`cyber.glow`).

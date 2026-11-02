@@ -14,7 +14,7 @@ import {
 } from './config.js';
 import './strings.js';
 import { Arena, PLAT_Y } from './arena.js';
-import { MiniAudio } from './audio.js';
+import { MiniAudio } from './audio.js?v=0.3.13c';
 import { StreakAura, placeTrail, shatterBurst } from './polish.js';
 
 const $ = (id) => document.getElementById(id);
@@ -238,7 +238,7 @@ function xoDoWarp() {
   audio.warp(); fx.kick({ aberr: 0.7, glitch: 0.4 }); ui.toast(t('mod.warp'));
 }
 function xoDoVirusSpread() {
-  const X = S.xo; if (X.over || X.virus < 0 || S.mode !== 'xo') return;
+  const X = S.xo; if (X.over || X.virus < 0 || S.mode !== 'xo' || X.turn !== 'O') return;
   const cell = xoVirusSpread(X.board, X.virus);
   arena.setVirus(-1); const from = X.virus; X.virus = -1; X.virusAge = 0;
   if (cell < 0 || X.board[cell]) return;
@@ -246,7 +246,7 @@ function xoDoVirusSpread() {
   xoPlay(cell, 'O');
 }
 function xoAITurn() {
-  const X = S.xo; if (X.over || S.mode !== 'xo' || S.state !== 'play') return;
+  const X = S.xo; if (X.over || S.mode !== 'xo' || S.state !== 'play' || X.turn !== 'O') return;
   const o = xoOpponent(X.opp);
   let blunder = X.forcePerfect ? 0 : (o.blunder || 0);
   X.forcePerfect = false;
@@ -405,7 +405,7 @@ function reactEnd() {
   const tier = avg ? reactTier(avg) : null;
   if (passed) audio.champion(); else audio.lose();
   showResult({ kicker: `${t('roundN', { n: round })} · ${t('target', { ms: target })}`, title: passed ? t('passed') : t('gauntletOver'), en: tier ? `${avg} ms · ${tierName(tier)}` : t('needCoffee'), record, danger: !passed,
-    stats: [[t('avg'), avg ? avg + 'ms' : '—'], [t('fastest'), best1 ? best1 + 'ms' : '—'], [t('fouls'), fouls], [t('roundReached'), Math.max(1, store.getNum('reactBestRound', 0))]],
+    stats: [[t('avg'), avg ? avg + 'ms' : '—'], [t('fastest'), best1 ? best1 + 'ms' : '—'], [t('fouls'), fouls], [t('roundReached'), round]],
     main: passed ? [t('nextRound'), 'ENTER'] : [t('tryAgain'), 'ENTER'], reward: null });
   Rx.round = passed ? Rx.round + 1 : 0;
 }
@@ -553,7 +553,7 @@ ui.on('btn-resume', resume); ui.on('btn-quit', showMenu);
 ui.on('btn-res-main', resultMain); ui.on('btn-res-modes', resultModes); ui.on('btn-res-reward', resultReward);
 Platform.onBack(() => { if (ui.closeModal()) return true; if (S.state === 'play') { pause(); return true; } if (S.state === 'paused') { resume(); return true; } if (S.state === 'result') { resultModes(); return true; } return false; });
 Platform.onPause(() => { if (!S.demo) pause(); });
-S.api = { enter: enterMode, rpsPick, xoHuman, reactTap, cellScreen: (i) => stage.toScreen(arena.cellPos(i)), xoUndo, rpsSetWager };
+S.api = { enter: enterMode, rpsPick, xoHuman, reactTap, reactEnd, cellScreen: (i) => stage.toScreen(arena.cellPos(i)), xoUndo, rpsSetWager, xoAITurn, xoDoVirusSpread };
 
 // ================================================================ camera + loop
 const camPos = new THREE.Vector3(0, 14, 14), camLook = new THREE.Vector3(0, PLAT_Y, 0), tP = new THREE.Vector3(), tL = new THREE.Vector3();

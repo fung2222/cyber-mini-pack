@@ -44,6 +44,8 @@ Three.js r169 + [cyber-kit](https://github.com/fung2222/cyber-kit) v0.3.19（`ve
 ```bash
 cd .. && python3 -m http.server 18940     # http://127.0.0.1:18940/cyber-mini-pack/
 node cyber-mini-pack/tests/rules.test.mjs
+python cyber-mini-pack/tests/virus-turns.py
+python cyber-mini-pack/tests/react-round.py
 python cyber-mini-pack/tests/smoke.py
 ```
 文件：[docs/HANDOFF.md](docs/HANDOFF.md) · [privacy.html](privacy.html) · 屬於 [CYBER ARCADE](https://github.com/fung2222/cyber-arcade) 系列。
