@@ -19,7 +19,7 @@
 - **神經反射**：一輪 5 次，平均要快過目標（由 450 ms 收緊到 300 ms 封頂）先可以入下一輪；失敗就由第 1 輪再嚟。記錄最佳平均同最高輪數。
 
 ## 語言 Language
-繁體中文（香港）／English，喺選單或暫停畫面撳「EN／中」切換，記低喺 `localStorage cyber.lang`（所有 CYBER 遊戲共用）；亦可用 `?lang=en` / `?lang=zh`。
+遊戲支援**繁體中文（香港）**／English，喺齒輪設定或暫停畫面切換，記低喺 `localStorage cyber.lang`（所有 CYBER 遊戲共用）；亦可用 `?lang=en` / `?lang=zh`。
 
 ## English
 **CYBER MINI PACK** puts three street classics in one cyberpunk 3D app, each an endless challenge with signature twists: **Rock Paper Scissors** with Fake Tell, hold-to-wager and Glitch Hand; **Tic-Tac-Toe** with rotating stage mods (Fog / Warp / Hazard / Echo), Virus O on endless cores and Overclock Undo; **Reaction** with Go/No-Go decoys, tri-lane from round 3 and charge-release on odd rounds. Tap/keyboard, bilingual zh-HK / English.
@@ -38,7 +38,7 @@
 `?demo=1` 自動輪流示範三個模式 · `?fps=1` · `?quality=low` · `?adsim=1` · `?reset=1` · `?mute=1`
 
 ## 技術 Tech
-Three.js r169 + [cyber-kit](https://github.com/fung2222/cyber-kit) v0.1.0（`vendor/cyber-kit/`），冇 build step，可離線運行。符號、棋盤、光球全部程式生成嘅原創設計；音效同音樂全部合成。
+Three.js r169 + [cyber-kit](https://github.com/fung2222/cyber-kit) v0.3.19（`vendor/cyber-kit/`），冇 build step，可離線運行。符號、棋盤、光球全部程式生成嘅原創設計；音效同音樂全部合成。
 
 ## 開發 Development
 ```bash

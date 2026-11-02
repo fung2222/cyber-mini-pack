@@ -32,7 +32,7 @@
   background: linear-gradient(160deg, color-mix(in srgb, var(--c1) 18%, rgba(10,4,30,.8)), rgba(10,4,30,.7)); border: 1px solid color-mix(in srgb, var(--c1) 70%, transparent);
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); transition: transform .1s, filter .2s; }
 .rps-btn svg { width: 44px; height: 44px; stroke: var(--c1); filter: drop-shadow(0 0 5px var(--c1)); }
-.rps-btn b { font-family: var(--font-zh); font-size: 22px; }
+.rps-btn b { font-family: var(--font-zh); font-size: clamp(15px, 4.3vw, 18px); }
 .rps-btn small { font-family: 'Orbitron', sans-serif; font-size: 8px; letter-spacing: 2px; color: var(--c1); }
 .rps-btn:active { transform: scale(.95); } .rps-btn:hover { filter: brightness(1.25); }
 .rps-btn:disabled { opacity: .35; filter: saturate(.3); cursor: default; }
@@ -50,7 +50,7 @@
 .mode-card:nth-child(2) .mc-ico svg { stroke: var(--c2); filter: drop-shadow(0 0 5px var(--c2)); }
 .mode-card:nth-child(3) .mc-ico svg { stroke: #3bff8a; filter: drop-shadow(0 0 5px #3bff8a); }
 .mc-txt { display: flex; flex-direction: column; flex: 1; line-height: 1.25; }
-.mc-txt b { font-family: var(--font-zh); font-size: 22px; letter-spacing: 3px; }
+.mc-txt b { font-family: var(--font-zh); font-size: clamp(16px, 4.1vw, 22px); letter-spacing: clamp(1px, .3vw, 3px); }
 .mc-txt small { font-family: 'Orbitron', sans-serif; font-size: 9px; letter-spacing: 3px; color: var(--c1); }
 .mc-txt em { font-style: normal; font-size: 12px; color: #b9b2e6; margin-top: 2px; }
 .mode-card kbd { opacity: .6; }

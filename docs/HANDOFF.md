@@ -57,14 +57,14 @@ js/polish.js     StreakAura, placeTrail, shatterBurst
 js/audio.js      MiniAudio (+ tell/wager/glitch/virus/nogo/lane/charge/ambient)
 js/strings.js    zh-HK / en (incl. mod.* / twist copy)
 js/main.js       state machine + twists + input
-vendor/cyber-kit v0.3.7
-tests/           rules.test.mjs (18), smoke.py
+vendor/cyber-kit v0.3.19
+tests/           rules.test.mjs (18), layout.py, smoke.py
 ```
 Test hook: `window.__mini` (`api.enter/rpsPick/rpsSetWager/xoHuman/xoUndo/reactTap/cellScreen`).
 
 ## 4. Tests
-`node tests/rules.test.mjs` (18 tests incl. tell/glitch/mods/warp/virus/reactPlan) · `python tests/smoke.py` — mobile + desktop: modes, RPS, XO+undo, reaction foul+taps, pause, i18n, endless rivals/stages/rounds, demo, zero console errors.
-Last run 2026-10-17: rules 18/18, smoke ALL PASSED.
+`node tests/rules.test.mjs` (18 tests incl. tell/glitch/mods/warp/virus/reactPlan) · `python tests/layout.py [url]` — 390px layout guard: equal mode-card heights, RPS labels fit their buttons, zero console errors · `python tests/smoke.py` — mobile + desktop: modes, RPS, XO+undo, reaction foul+taps, pause, i18n, endless rivals/stages/rounds, demo, zero console errors.
+Last run 2026-11-02: rules 18/18, layout PASS (mode cards 71px, SCISSORS 93px inside 96px button). Full smoke remains the long run.
 
 ## 5. Android packaging
 As DATA FUSE (Capacitor 8 + `@capacitor-community/admob` v8; app id suggestion `hk.fung2222.cyberminipack`).
