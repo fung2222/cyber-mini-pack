@@ -32,7 +32,7 @@ with sync_playwright() as p:
     errors = []
     pg.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
     pg.goto(URL + '?lang=zh&reset=1', wait_until='domcontentloaded')
-    pg.wait_for_function("() => document.getElementById('loading')?.classList.contains('done')", timeout=60000)
+    pg.wait_for_function("() => (() => {const l=document.getElementById('loading'); return !l || l.classList.contains('done') || l.classList.contains('hidden');})()", timeout=60000)
     pg.wait_for_timeout(300)
     pg.evaluate("() => __mini.api.enter('xo')")
     pg.wait_for_timeout(300)
